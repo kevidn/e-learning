@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kelola Modul</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-8">
+
+<!-- Background Blur Blobs -->
+<div class="absolute inset-0 overflow-hidden -z-10">
+    <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-blue-100 opacity-20 blur-3xl"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full bg-indigo-100 opacity-20 blur-3xl"></div>
+</div>
+
+<!-- Kartu Utama (Glassmorphism) -->
+<div class="max-w-6xl mx-auto bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
+
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div class="flex items-center space-x-4">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-xl shadow-md">
+                <i data-feather="layers" class="text-white w-8 h-8"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Kelola Modul</h1>
+                <p class="text-gray-600">Buat, edit, atau hapus modul mata kuliah.</p>
+            </div>
+        </div>
+        <a href="{% url 'tambah_modul' %}" class="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-5 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg no-underline">
+            <i data-feather="plus" class="mr-2"></i>
+            Tambah Modul
+        </a>
+    </div>
+
+    <!-- Tampilkan Pesan Sukses/Error -->
+    {% if messages %}
+    {% for message in messages %}
+    {% if message.tags == 'error' %}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded" role="alert">
+        <p>{{ message }}</p>
+    </div>
+    {% elif message.tags == 'success' %}
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded" role="alert">
+        <p>{{ message }}</p>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Tabel Modul -->
+    <div class="overflow-x-auto rounded-lg border border-gray-200/50 shadow-sm">
+        <table class="min-w-full divide-y divide-gray-200/50">
+            <thead class="bg-gray-50/50">
+            <tr>
+                <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Judul Modul</th>
+                <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mata Kuliah</th>
+                <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200/50">
+            {% for modul in modules %}
+            <tr class="hover:bg-gray-50/30 transition-colors">
+                <td class="py-4 px-4 text-gray-700 font-medium">{{ modul.title }}</td>
+                <td class="py-4 px-4 text-gray-600">{{ modul.course.course_name }}</td>
+                <td class="py-4 px-4 flex space-x-2">
+                    <a href="{% url 'edit_modul' modul.module_id %}" class="text-blue-600 hover:text-blue-800 p-2 rounded-md hover:bg-blue-100" title="Edit">
+                        <i data-feather="edit-2" class="w-5 h-5"></i>
+                    </a>
+
+                    <!--
+                      PERUBAHAN PADA FORM HAPUS:
+                      1. Tombol 'submit' diganti 'button'
+                      2. Diberi class 'delete-btn-trigger'
+                      3. Diberi data-title untuk menampilkan nama modul di modal
+                      4. Form 'onsubmit' dihapus
+                    -->
+                    <form method="POST" action="{% url 'hapus_modul' modul.module_id %}">
+                        {% csrf_token %}
+                        <button type="button"
+                                class="delete-btn-trigger text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-100"
+                                data-title="{{ modul.title }}"
+                                title="Hapus">
+                            <i data-feather="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="py-6 px-4 text-center text-gray-500">Anda belum memiliki modul.</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{% url 'dosen_dashboard' %}" class="inline-flex items-center mt-6 text-blue-600 hover:text-blue-800 transition-colors">
+        <i data-feather="arrow-left" class="w-4 h-4 mr-2"></i>
+        Kembali ke Dashboard
+    </a>
+
+</div>
+
+<!--
+  =================================
+  MODAL KONFIRMASI HAPUS BARU
+  =================================
+  Struktur HTML untuk modal, awalnya disembunyikan (hidden)
+-->
+<div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"
+     aria-labelledby="modal-title" role="dialog" aria-modal="true">
+
+    <!-- 1. Overlay Background -->
+    <div id="modal-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- 2. Konten Modal (Glassmorphism) -->
+    <div class="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 w-full max-w-md overflow-hidden transform transition-all">
+
+        <div class="p-8">
+            <div class="flex flex-col items-center text-center">
+                <!-- Ikon Peringatan -->
+                <div class="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <i data-feather="alert-triangle" class="w-8 h-8 text-red-600"></i>
+                </div>
+
+                <!-- Judul Modal -->
+                <h3 class="text-2xl font-bold text-gray-800" id="modal-title">Hapus Modul</h3>
+
+                <!-- Pesan Peringatan (Dinamis) -->
+                <div class="mt-2">
+                    <p class="text-gray-600">Anda yakin ingin menghapus modul ini?</p>
+                    <p class="font-semibold text-gray-700 mt-1" id="modal-item-name"></p>
+                    <p class="text-sm text-gray-500 mt-2">Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tombol Aksi Modal -->
+        <div class="bg-gray-50/50 px-8 py-5 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-4 space-y-4 sm:space-y-0 space-y-reverse">
+
+            <!-- Form Hapus Asli (yang akan disubmit) -->
+            <form method="POST" id="modal-delete-form" class="w-full sm:w-auto">
+                {% csrf_token %}
+                <button type="submit"
+                        class="flex items-center justify-center w-full sm:w-auto bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg">
+                    Ya, Hapus
+                </button>
+            </form>
+
+            <!-- Tombol Batal -->
+            <button type="button" id="modal-cancel-btn"
+                    class="flex items-center justify-center w-full sm:w-auto bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 shadow-sm">
+                Batal
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    feather.replace();
+
+    /* =================================
+      JAVASCRIPT UNTUK MODAL HAPUS
+      =================================
+    */
+    document.addEventListener('DOMContentLoaded', () => {
+        const deleteModal = document.getElementById('deleteModal');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const modalForm = document.getElementById('modal-delete-form');
+        const modalItemName = document.getElementById('modal-item-name');
+
+        // Dapatkan semua tombol pemicu hapus
+        const deleteTriggers = document.querySelectorAll('.delete-btn-trigger');
+
+        // Fungsi untuk membuka modal
+        const openModal = (e) => {
+            // Mencegah form di baris tabel terkirim
+            e.preventDefault();
+
+            // Dapatkan tombol yang diklik
+            const triggerButton = e.currentTarget;
+            // Dapatkan form terdekat dari tombol itu
+            const rowForm = triggerButton.closest('form');
+
+            // Ambil data dari tombol dan form
+            const actionUrl = rowForm.action;
+            const moduleTitle = triggerButton.dataset.title;
+
+            // Set data ke modal
+            modalForm.action = actionUrl; // Set URL hapus ke form modal
+            modalItemName.textContent = `"${moduleTitle}"`; // Set nama modul
+
+            // Tampilkan modal
+            deleteModal.classList.remove('hidden');
+        };
+
+        // Fungsi untuk menutup modal
+        const closeModal = () => {
+            deleteModal.classList.add('hidden');
+            modalForm.action = ''; // Kosongkan action
+            modalItemName.textContent = ''; // Kosongkan nama
+        };
+
+        // Tambahkan event listener ke setiap tombol hapus di tabel
+        deleteTriggers.forEach(trigger => {
+            trigger.addEventListener('click', openModal);
+        });
+
+        // Tambahkan event listener untuk tombol Batal
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Tambahkan event listener untuk overlay (klik di luar modal)
+        modalOverlay.addEventListener('click', closeModal);
+    });
+</script>
+</body>
+</html>
