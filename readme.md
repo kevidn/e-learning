@@ -90,8 +90,9 @@ Berikut adalah langkah-langkah untuk menjalankan proyek ini di komputer lain.
 * **Mahasiswa:** `mhsA@example.com` / `12345`
 
 ## Tim Pengembang
-      |
-| -- | ------------------------ | ----------- |
-| 1. | Kevin Dzaky Hendratama   | 24111814055 |
-| 2. | Muhammad Hafizh Dhafa R  | 24111814053 |
-| 3. |  Amelanov Destyawanda    | 24111814092 |
+
+No.	Nama	NIM
+
+1.	Kevin Dzaky Hendratama	24111814055
+2.	Muhammad Hafizh Shafa R	24111814053
+3.	Amelanov Destyawanda	24111814092
