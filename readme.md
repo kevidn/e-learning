@@ -24,7 +24,7 @@ Tampilan antarmuka (UI) dibangun menggunakan **Tailwind CSS** dengan tema *glass
 
 * **Backend:** Python 3, Django 4.x
 * **Database:** MySQL (dihubungkan dengan `PyMySQL`)
-* **Frontend:** Tailwind CSS (via CDN), Feather Icons
+* **Frontend:** Tailwind CSS (via CDN), Feather Icons dan komponen interaktif sederhana berbasis JavaScript.
 
 ## Panduan Instalasi dan Menjalankan
 
@@ -88,3 +88,10 @@ Berikut adalah langkah-langkah untuk menjalankan proyek ini di komputer lain.
 
 * **Dosen:** `dosenA@example.com` / `12345`
 * **Mahasiswa:** `mhsA@example.com` / `12345`
+
+## Tim Pengembang
+      |
+| -- | ------------------------ | ----------- |
+| 1. | Kevin Dzaky Hendratama   | 24111814055 |
+| 2. | Muhammad Hafizh Dhafa R  | 24111814053 |
+| 3. |  Amelanov Destyawanda    | 24111814092 |
