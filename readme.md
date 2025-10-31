@@ -1,4 +1,4 @@
-# Proyek E-Learning Django
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=Welcome+to+E-Learning)](https://git.io/typing-svg)
 
 Ini adalah portal e-learning sederhana yang dibangun menggunakan **Django** sebagai backend dan **MySQL** sebagai database. Proyek ini memiliki sistem autentikasi kustom yang memisahkan fungsionalitas berdasarkan peran pengguna (Dosen dan Mahasiswa).
 
@@ -90,9 +90,8 @@ Berikut adalah langkah-langkah untuk menjalankan proyek ini di komputer lain.
 * **Mahasiswa:** `mhsA@example.com` / `12345`
 
 ## Tim Pengembang
-
-| No. | Nama                   | NIM         |
-|-----|------------------------|-------------|
-| 1.  | Muhammad Hafizh Shafa R| 24111814053 |
-| 2.  | Kevin Dzaky Hendratama | 24111814055 |
-| 3.  | Amelanov Destyawanda   | 24111814092 |
+|PROFIL |NAMA | NIM |
+|-|-------|--------|
+| [<img src="https://avatars.githubusercontent.com/u/115269741?v=4" width="50"/>](https://github.com/kevidn) |**Kevin Dzaky Hendratama** | 24111814055 |
+| [<img src="https://avatars.githubusercontent.com/u/189943411?v=4" width="50"/>](https://github.com/AmelanovDestyawanda) |**Amelanov Destyawanda** | 24111814092 |
+| [<img src="https://avatars.githubusercontent.com/u/189825677?v=4" width="50"/>](https://github.com/Apissr) |**Muhammad Hafizh Shafa** | 24111814053 |
