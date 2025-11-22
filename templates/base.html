@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E-Learning{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="font-sans min-h-screen text-gray-800 bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col z-30">
+            <div class="h-20 flex items-center justify-center px-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md"><i data-feather="book-open" class="text-white w-6 h-6"></i></div>
+                    <h1 class="text-2xl font-bold text-gray-800">E-Learning</h1>
+                </div>
+            </div>
+            <nav class="flex-1 overflow-y-auto p-6 space-y-2">{% block sidebar_menu %}{% endblock %}</nav>
+            <div class="p-4 border-t border-gray-100 bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold shadow-sm">{{ request.session.name|slice:":1" }}</div>
+                    <div class="overflow-hidden"><p class="text-sm font-bold text-gray-800 truncate">{{ request.session.name }}</p><p class="text-xs text-gray-500 truncate">{{ request.session.role_name }}</p></div>
+                </div>
+            </div>
+        </aside>
+        <div class="flex-1 flex flex-col h-screen relative">
+            <header class="h-20 bg-white border-b border-gray-200 flex-shrink-0 flex items-center justify-between px-8 shadow-sm z-20">
+                <div><h2 class="text-2xl font-bold text-gray-800">{% block header_title %}Dashboard{% endblock %}</h2><p class="text-sm text-gray-600">{% block header_subtitle %}{% endblock %}</p></div>
+                <div class="flex items-center space-x-4">
+                    {% block navbar_actions %}{% endblock %}
+                    <a href="{% url 'logout_view' %}" class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 transition-all"><i data-feather="log-out" class="w-4 h-4"></i><span class="text-sm font-medium">Keluar</span></a>
+                </div>
+            </header>
+            <div class="flex-1 overflow-hidden bg-cover bg-center bg-no-repeat" style="background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), url('{% block background_image %}{% static 'images/bg.jpg' %}{% endblock %}');">
+                <main class="h-full overflow-y-auto p-8 scroll-smooth">
+                    {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for message in messages %}
+                        <div class="p-4 rounded-xl backdrop-blur-md border {% if message.tags == 'error' %}bg-red-100/90 border-red-200 text-red-700{% else %}bg-green-100/90 border-green-200 text-green-700{% endif %} shadow-sm flex items-center"><i data-feather="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-5 h-5 mr-2"></i>{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
+    </div>
+    <script>feather.replace();</script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

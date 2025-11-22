@@ -1,84 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{% if module %}Edit Modul{% else %}Tambah Modul Baru{% endif %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/feather-icons"></script>
-  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-</head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-8">
+{% extends 'base.html' %}
+{% load static %}
 
-<div class="absolute inset-0 overflow-hidden -z-10">
-  <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-blue-100 opacity-20 blur-3xl"></div>
-  <div class="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full bg-indigo-100 opacity-20 blur-3xl"></div>
-</div>
+{# Gunakan background yang sama dengan detail modul agar konsisten #}
+{% block background_image %}{% static 'images/bg2.jpg' %}{% endblock %}
 
-<div class="max-w-2xl mx-auto bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
+{% block title %}
+    {% if module %}Edit Modul{% else %}Tambah Modul Baru{% endif %}
+{% endblock %}
 
-  <div class="flex items-center space-x-4 mb-6">
-    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-xl shadow-md">
-      <i data-feather="{% if module %}edit{% else %}file-plus{% endif %}" class="text-white w-8 h-8"></i>
+{% block header_title %}Kelola Modul{% endblock %}
+{% block header_subtitle %}
+    {% if module %}Edit konten modul yang sudah ada.{% else %}Buat materi pembelajaran baru.{% endif %}
+{% endblock %}
+
+{% block sidebar_menu %}
+    <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Navigasi</h3>
+    <a href="{% url 'dosen_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-white/50 hover:text-indigo-600 transition-all">
+        <i data-feather="arrow-left" class="w-5 h-5"></i><span>Kembali ke Dashboard</span>
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-4xl mx-auto">
+        
+        <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+            
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-6 text-white flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="bg-white/20 p-3 rounded-xl mr-4">
+                        <i data-feather="{% if module %}edit-3{% else %}plus-square{% endif %}" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold">{% if module %}Edit Modul{% else %}Tambah Modul Baru{% endif %}</h2>
+                        <p class="text-indigo-100 text-sm">Lengkapi formulir di bawah ini.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 md:p-10">
+                <form method="POST" class="space-y-6">
+                    {% csrf_token %}
+
+                    <div class="space-y-2">
+                        <label for="title" class="text-sm font-bold text-gray-700 uppercase tracking-wider">Judul Modul</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i data-feather="type" class="text-gray-400 w-5 h-5"></i>
+                            </div>
+                            <input type="text" name="title" id="title" required
+                                   value="{% if module %}{{ module.title }}{% endif %}"
+                                   placeholder="Contoh: Pengenalan Algoritma Dasar"
+                                   class="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none font-medium text-gray-700 placeholder-gray-400">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="course" class="text-sm font-bold text-gray-700 uppercase tracking-wider">Mata Kuliah</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i data-feather="book" class="text-gray-400 w-5 h-5"></i>
+                            </div>
+                            <select name="course" id="course" required
+                                    class="w-full pl-12 pr-10 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none font-medium text-gray-700 bg-white appearance-none">
+                                <option value="" disabled {% if not module %}selected{% endif %}>-- Pilih Mata Kuliah --</option>
+                                {% for course in dosen_courses %}
+                                <option value="{{ course.course_id }}" 
+                                        {% if module and module.course_id == course.course_id %}selected{% endif %}>
+                                    {{ course.course_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                <i data-feather="chevron-down" class="text-gray-400 w-5 h-5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <label for="description" class="text-sm font-bold text-gray-700 uppercase tracking-wider">Deskripsi Singkat Modul</label>
+                      <div class="relative">
+                          <textarea name="description" id="description" rows="6"
+                                    placeholder="Tuliskan deskripsi singkat bab ini..."
+                                    class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none font-mono text-sm text-gray-700 placeholder-gray-400 leading-relaxed shadow-inner">{% if module %}{{ module.description }}{% endif %}</textarea>
+                          <div class="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
+                              Teks biasa
+                          </div>
+                      </div>
+                  </div>
+
+                    <div class="pt-6 flex items-center justify-end space-x-4 border-t border-gray-100">
+                        <a href="{% url 'dosen_dashboard' %}" 
+                           class="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center">
+                            Batal
+                        </a>
+                        <button type="submit" 
+                                class="px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/30 transform hover:-translate-y-0.5 transition-all flex items-center">
+                            <i data-feather="save" class="w-5 h-5 mr-2"></i>
+                            {% if module %}Simpan Perubahan{% else %}Simpan Modul{% endif %}
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
     </div>
-    <div>
-      <h1 class="text-3xl font-bold text-gray-800">
-        {% if module %}Edit Modul{% else %}Tambah Modul Baru{% endif %}
-      </h1>
-      <p class="text-gray-600">Isi detail modul di bawah ini.</p>
-    </div>
-  </div>
+{% endblock %}
 
-  <form method="POST" class="space-y-5">
-    {% csrf_token %}
-
-    <div class="relative">
-      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <i data-feather="type" class="text-gray-400"></i>
-      </div>
-      <input type="text" name="title" id="title" required
-             value="{% if module %}{{ module.title }}{% endif %}"
-             placeholder="Judul Modul"
-             class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-    </div>
-
-    <div class="relative">
-      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <i data-feather="book" class="text-gray-400"></i>
-      </div>
-      <select name="course" id="course" required
-              class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-        <option value="">Pilih Mata Kuliah...</option>
-        {% for course in dosen_courses %}
-        <option value="{{ course.course_id }}"
-                {% if module.course_id == course.course_id %}selected{% endif %}>
-          {{ course.course_name }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="relative">
-                <textarea name="content" id="content" rows="10"
-                          placeholder="Tulis konten modul di sini..."
-                          class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">{% if module %}{{ module.content }}{% endif %}</textarea>
-    </div>
-
-    <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
-      <button type="submit"
-              class="flex items-center justify-center w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg no-underline">
-        <i data-feather="save" class="mr-2"></i>
-        Simpan Modul
-      </button>
-      <a href="{% url 'list_modul' %}"
-         class="flex items-center justify-center w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 shadow-sm no-underline">
-        Batal
-      </a>
-    </div>
-  </form>
-</div>
-
+{% block extra_js %}
 <script>
-  feather.replace();
+    feather.replace();
 </script>
-</body>
-</html>
+{% endblock %}
