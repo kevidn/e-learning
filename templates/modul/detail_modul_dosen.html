@@ -1,0 +1,1098 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block background_image %}{% static 'images/bg2.jpg' %}{% endblock %}
+
+{% block title %}Kelola: {{ module.title }}{% endblock %}
+{% block header_title %}Kelola Modul{% endblock %}
+{% block header_subtitle %}{{ module.course.course_name }}{% endblock %}
+
+{# --- TOMBOL BACK DI NAVBAR --- #}
+{% block navbar_actions %}
+    <a href="{% url 'dosen_dashboard' %}" class="hidden sm:flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 transition-all shadow-sm mr-2">
+        <i data-feather="arrow-left" class="w-4 h-4"></i>
+        <span class="text-sm font-bold">Dashboard</span>
+    </a>
+{% endblock %}
+
+{% block sidebar_menu %}
+    <h3 class="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Navigasi</h3>
+    <a href="{% url 'dosen_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-white/50 hover:text-indigo-600 transition-all">
+        <i data-feather="grid" class="w-5 h-5"></i><span>Menu Utama</span>
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2 pointer-events-none"></div>
+
+    <div class="flex flex-col lg:flex-row gap-6 pb-10">
+        
+        <div class="flex-1 order-2 lg:order-1 space-y-6 min-w-0">
+            
+            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden p-8">
+                <div class="mb-4 group">
+                     <div id="title-display" class="flex justify-between items-start">
+                        <div class="w-full">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-indigo-500 uppercase tracking-wider block">Bab Modul</span>
+                                <span id="date-display" class="text-xs text-gray-400">{{ module.created_at|date:"d M Y" }}</span>
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                                <span id="title-text">{{ module.title }}</span>
+                                <button onclick="toggleEdit('title', true)" class="ml-3 p-2 text-gray-400 hover:text-indigo-600 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                    <i data-feather="edit-2" class="w-5 h-5"></i>
+                                </button>
+                            </h1>
+                        </div>
+                     </div>
+                     <form id="title-form" class="hidden" onsubmit="saveChanges(event, 'title')">
+                        {% csrf_token %}
+                        <input type="hidden" name="is_ajax" value="true">
+                        <div class="flex gap-2">
+                            <input type="text" name="title" id="input-title" value="{{ module.title }}" class="flex-1 text-2xl font-bold border-2 border-indigo-300 rounded-lg px-3 py-2 focus:outline-none">
+                            <button type="submit" class="btn-save bg-indigo-600 text-white px-4 rounded-lg"><i data-feather="check"></i></button>
+                            <button type="button" onclick="toggleEdit('title', false)" class="bg-gray-100 px-4 rounded-lg"><i data-feather="x"></i></button>
+                        </div>
+                     </form>
+                </div>
+
+                <div class="group relative">
+                     <div id="description-display" class="prose prose-indigo text-gray-600 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onclick="toggleEdit('description', true)">
+                        {% if module.description %}
+                            {{ module.description|linebreaks }}
+                        {% else %}
+                            <span class="text-gray-400 italic">Klik untuk menambahkan deskripsi bab...</span>
+                        {% endif %}
+                     </div>
+                     <form id="description-form" class="hidden" onsubmit="saveChanges(event, 'description')">
+                        {% csrf_token %}
+                        <textarea name="description" id="input-description" rows="3" class="w-full border-2 border-indigo-300 rounded-lg p-3 focus:outline-none">{{ module.description }}</textarea>
+                        <div class="flex justify-end gap-2 mt-2">
+                            <button type="button" onclick="toggleEdit('description', false)" class="text-gray-500 text-sm font-bold px-3 py-1">Batal</button>
+                            <button type="submit" class="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-lg">Simpan</button>
+                        </div>
+                     </form>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center px-2">
+                    <h3 class="text-lg font-bold text-gray-700 flex items-center"><i data-feather="layers" class="w-5 h-5 mr-2"></i> Materi Pembelajaran</h3>
+                    <button onclick="openContentModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center shadow-md">
+                        <i data-feather="plus-circle" class="w-4 h-4 mr-2"></i> Tambah Halaman
+                    </button>
+                </div>
+
+                <div id="content-list" class="space-y-6 relative min-h-[100px]">
+                    {% for content in contents %}
+                    <div id="content-card-{{ content.content_id }}" class="content-item bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md group" data-id="{{ content.content_id }}">
+                        
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="drag-handle cursor-move p-2 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Tahan & Geser untuk mengatur urutan">
+                                        <i data-feather="move" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="content-number bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                                        {{ forloop.counter }}
+                                    </span>
+                                    <div class="flex-1 ml-2">
+                                        <h4 class="text-xl font-bold text-gray-800 title-display">{{ content.title }}</h4>
+                                        <div class="flex space-x-2 mt-1">
+                                            {% if content.text_content %}
+                                            <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Teks</span>
+                                            {% endif %}
+                                            {% if content.video_url %}
+                                            <span class="text-[10px] uppercase font-bold tracking-wider text-red-400 bg-red-50 px-2 py-0.5 rounded">Video</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    <button onclick="openEditContentModal('{{ content.content_id }}', '{{ content.title|escapejs }}', `{{ content.text_content|escapejs }}`, '{{ content.video_url|default:'' }}')" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                                        <i data-feather="edit-3" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="triggerDeleteContent('{{ content.content_id }}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Hapus">
+                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="pl-14 content-body">
+                                {% if content.text_content %}
+                                <div class="prose prose-sm max-w-none text-gray-600 mb-4 text-preview">
+                                    {{ content.text_content|linebreaks }}
+                                </div>
+                                {% endif %}
+
+                                {% if content.video_url %}
+                                <div class="rounded-xl overflow-hidden bg-black aspect-video shadow-inner video-preview">
+                                    <iframe 
+                                        class="w-full h-full" 
+                                        src="{{ content.get_embed_url }}" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                        referrerpolicy="strict-origin-when-cross-origin" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div id="quiz-wrapper-{{ content.content_id }}" class="bg-gray-50 border-t border-gray-100 px-6 py-4 pl-14 sm:pl-20">
+                            {% if content.quiz %}
+                                <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-indigo-100 shadow-sm fade-in">
+                                    <div class="flex items-center text-indigo-700">
+                                        <div class="bg-indigo-100 p-2 rounded-lg mr-3">
+                                            <i data-feather="check-circle" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-sm">Quiz: {{ content.quiz.title }}</p>
+                                            <p class="text-xs text-gray-500">{{ content.quiz.questions.count }} Soal</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="editQuizAJAX('{{ content.quiz.quiz_id }}', '{{ content.content_id }}', '{{ content.title|escapejs }}')" 
+                                                class="text-indigo-400 hover:text-indigo-600 p-2 text-xs font-bold hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Quiz">
+                                            <i data-feather="edit-2" class="w-4 h-4"></i>
+                                        </button>
+                                        
+                                        <button onclick="triggerDeleteQuiz('{{ content.quiz.quiz_id }}', '{{ content.content_id }}', '{{ content.title|escapejs }}')" 
+                                                class="text-red-400 hover:text-red-600 p-2 text-xs font-bold hover:bg-red-50 rounded-lg transition-colors" title="Hapus Quiz">
+                                            <i data-feather="trash" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <button onclick="openQuizModal('{{ content.content_id }}', '{{ content.title|escapejs }}')" class="text-sm text-gray-500 hover:text-indigo-600 font-bold flex items-center border border-dashed border-gray-300 px-4 py-3 rounded-lg w-full justify-center hover:border-indigo-300 hover:bg-white transition-all fade-in">
+                                    <i data-feather="plus-circle" class="w-4 h-4 mr-2"></i> Tambah Quiz untuk materi ini
+                                </button>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% empty %}
+                    <div id="empty-state" class="text-center py-12 bg-white/50 border-2 border-dashed border-gray-300 rounded-2xl">
+                        <p class="text-gray-500">Belum ada materi di bab ini.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 border-t border-gray-200 flex justify-end rounded-b-2xl mt-4">
+                <button onclick="triggerDeleteModule()" class="text-red-500 hover:text-red-700 text-sm font-bold flex items-center px-3 py-2 hover:bg-red-50 rounded-lg transition-colors">
+                    <i data-feather="trash-2" class="w-4 h-4 mr-2"></i> Hapus Modul
+                </button>
+                <form id="form-hapus-modul" method="POST" action="{% url 'hapus_modul' module.module_id %}" class="hidden">
+                   {% csrf_token %}
+               </form>
+           </div>
+        </div>
+
+        <div class="w-full lg:w-80 flex-shrink-0 order-1 lg:order-2 space-y-6">
+            
+            <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 overflow-hidden">
+                <div class="p-4 bg-orange-100 text-orange-800 font-bold flex justify-between items-center">
+                    <span><i data-feather="clipboard" class="inline w-4 h-4 mr-1"></i> Tugas Modul</span>
+                    <button onclick="openTaskModal()" class="bg-white text-orange-600 px-2 py-1 rounded text-xs hover:bg-orange-50 font-bold shadow-sm border border-orange-200">+ Buat</button>
+                </div>
+                <div id="task-list-container" class="p-4 space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {% for assign in assignments %}
+                    <div id="task-item-{{ assign.assignment_id }}" class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-sm hover:shadow-md transition-all group relative">
+                        
+                        <div class="absolute top-2 right-2 hidden group-hover:flex space-x-1">
+                            <button onclick="editTaskAJAX('{{ assign.assignment_id }}')" class="p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100" title="Edit">
+                                <i data-feather="edit-2" class="w-3 h-3"></i>
+                            </button>
+                            <button onclick="triggerDeleteTask('{{ assign.assignment_id }}')" class="p-1 bg-red-50 text-red-600 rounded hover:bg-red-100" title="Hapus">
+                                <i data-feather="trash" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+
+                        <p class="font-bold text-gray-800 pr-12 task-title-disp">{{ assign.title }}</p>
+                        <p class="text-xs text-gray-500 mt-1 task-deadline-disp">Deadline: {{ assign.deadline|date:"d M H:i" }}</p>
+                    </div>
+                    {% empty %}
+                    <div id="no-task-msg" class="text-center py-4 border border-dashed border-gray-300 rounded-lg bg-gray-50/50">
+                        <p class="text-xs text-gray-400">Tidak ada tugas di modul ini.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 sticky top-8 overflow-hidden">
+                <div class="p-5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+                    <h4 class="font-bold text-lg flex items-center"><i data-feather="list" class="w-5 h-5 mr-2"></i> Silabus</h4>
+                    <p class="text-indigo-100 text-xs mt-1">{{ module.course.course_name }}</p>
+                </div>
+                <div class="p-4 max-h-[calc(100vh-400px)] overflow-y-auto custom-scrollbar">
+                    <div class="mb-2">
+                        <h5 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Bab Pembelajaran</h5>
+                        <div class="space-y-2" id="module-list">
+                            {% for mod in syllabus_modules %}
+                            <a href="{% url 'detail_modul_dosen' mod.module_id %}" 
+                               class="flex items-center p-3 rounded-xl transition-all duration-200 border {% if mod.module_id == module.module_id %}bg-indigo-50 border-indigo-200 text-indigo-700 active-module{% else %}bg-white border-transparent hover:bg-gray-50 text-gray-600{% endif %}">
+                                <div class="flex-shrink-0 mr-3">
+                                    <div class="icon-box w-8 h-8 rounded-full flex items-center justify-center {% if mod.module_id == module.module_id %}bg-indigo-200 text-indigo-700{% else %}bg-gray-100 text-gray-400{% endif %}">
+                                        <i data-feather="book" class="w-4 h-4"></i>
+                                    </div>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-sm font-bold truncate">{{ mod.title }}</p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        <a href="{% url 'tambah_modul' %}" class="mt-3 block w-full text-center py-2 border border-dashed border-gray-300 rounded-xl text-xs font-bold text-gray-500 hover:text-indigo-600">+ Tambah Bab</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeDeleteModal()"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all scale-100">
+            <div class="text-center">
+                <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="alert-triangle" class="w-7 h-7 text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2" id="deleteModalTitle">Hapus Konten?</h3>
+                <p class="text-sm text-gray-500 mb-6" id="deleteModalDesc">Tindakan ini tidak dapat dibatalkan.</p>
+                
+                <div class="flex space-x-3 justify-center">
+                    <button onclick="closeDeleteModal()" class="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors">Batal</button>
+                    <button id="confirmDeleteBtn" class="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center justify-center min-w-[100px]">
+                        <span>Ya, Hapus</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="contentModal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeContentModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+                <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                    <h3 class="text-lg font-bold text-white" id="contentModalTitle">Tambah Halaman Materi</h3>
+                    <button onclick="closeContentModal()" class="text-white"><i data-feather="x"></i></button>
+                </div>
+                
+                <form id="contentForm" class="p-6 space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="module_id" value="{{ module.module_id }}">
+                    
+                    <input type="hidden" name="content_id" id="modal-content-id">
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Judul Halaman</label>
+                        <input type="text" name="title" id="c_title" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Teks Materi</label>
+                        <textarea name="text_content" id="c_text" rows="6" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-200 outline-none font-mono text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Link Video (Youtube Embed)</label>
+                        <input type="url" name="video_url" id="c_video" placeholder="https://www.youtube.com/embed/..." class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-200 outline-none">
+                        <p class="text-xs text-gray-400 mt-1">Otomatis mengubah link youtube watch menjadi embed.</p>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit" class="btn-save-content bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 flex items-center">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="quizModal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeQuizModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden max-h-[90vh] flex flex-col">
+                <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
+                    <h3 class="text-lg font-bold text-white">Buat Quiz: <span id="quiz-parent-title" class="font-normal opacity-80">...</span></h3>
+                    <button onclick="closeQuizModal()" class="text-white hover:text-indigo-200"><i data-feather="x"></i></button>
+                </div>
+                
+                <form id="quizForm" class="flex flex-col flex-1 overflow-hidden">
+                    {% csrf_token %}
+                    <input type="hidden" name="content_id" id="modal-quiz-content-id">
+                    
+                    <input type="hidden" name="quiz_id" id="modal-quiz-id"> 
+                    
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Judul Quiz</label>
+                                <input type="text" name="title" id="quiz-title" required placeholder="Contoh: Quiz Evaluasi Bab Ini" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-indigo-200 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Deskripsi (Opsional)</label>
+                                <textarea name="description" id="quiz-desc" rows="1" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-indigo-200 outline-none"></textarea>
+                            </div>
+                        </div>
+                        <hr class="border-gray-200">
+                        <div id="questions-container" class="space-y-6">
+                            </div>
+                        <button type="button" onclick="addQuestionField()" class="w-full py-3 bg-indigo-50 text-indigo-600 border border-dashed border-indigo-300 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
+                            + Tambah Soal
+                        </button>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-2 flex-shrink-0">
+                        <button type="button" onclick="closeQuizModal()" class="px-4 py-2 rounded-lg bg-gray-200 font-bold text-gray-600">Batal</button>
+                        <button type="submit" class="btn-save-quiz px-6 py-2 rounded-lg bg-indigo-600 font-bold text-white shadow-lg">Simpan Quiz</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskModal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeTaskModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="bg-orange-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i data-feather="clipboard" class="mr-2"></i> <span id="task-modal-title">Buat Tugas Baru</span>
+                    </h3>
+                    <button onclick="closeTaskModal()" class="text-white"><i data-feather="x"></i></button>
+                </div>
+                
+                <form id="taskForm" class="p-6 space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="module_id" value="{{ module.module_id }}">
+                    <input type="hidden" name="task_id" id="modal-task-id"> <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Judul Tugas</label>
+                        <input type="text" name="title" id="task-title" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-orange-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Deskripsi</label>
+                        <textarea name="description" id="task-desc" rows="2" class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-orange-200 outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Deadline</label>
+                        <input type="datetime-local" name="deadline" id="task-deadline" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-2 focus:ring-orange-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">File Pendukung (Opsional)</label>
+                        <input type="file" name="files" multiple class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                        <p class="text-[10px] text-gray-400 mt-1">*Saat edit, upload file baru akan menambah, bukan menghapus yang lama.</p>
+                    </div>
+                    <div class="pt-2 flex justify-end gap-2">
+                        <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-lg bg-gray-100 font-bold text-gray-600">Batal</button>
+                        <button type="submit" class="btn-save-task px-4 py-2 rounded-lg bg-orange-600 font-bold text-white">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+    // ============================
+    // GLOBAL VARIABLES & SETUP
+    // ============================
+    let currentModuleId = {{ module.module_id }};
+    const urlTemplateEdit    = "{% url 'edit_modul' 0 %}";
+    const urlTemplateHapusKonten = "{% url 'hapus_konten' 0 %}";
+    const reorderUrl = "{% url 'reorder_konten' %}";
+    
+    // URL AJAX BARU (Pastikan path ini ada di urls.py)
+    const urlCreateQuizAjax = "{% url 'create_quiz_ajax' %}";
+    const urlCreateTaskAjax = "{% url 'create_task_ajax' %}";
+
+    // ============================
+    // DRAG & DROP
+    // ============================
+    const listContainer = document.getElementById('content-list');
+    if (listContainer) {
+        new Sortable(listContainer, {
+            handle: '.drag-handle', 
+            animation: 150,
+            ghostClass: 'bg-indigo-50',
+            scroll: true,
+            scrollSensitivity: 150, 
+            scrollSpeed: 20, 
+            bubbleScroll: true, 
+            onEnd: function (evt) {
+                saveOrder();
+                updateNumbers();
+            }
+        });
+    }
+
+    // ============================
+    // QUIZ DINAMIS (Full AJAX Create & Edit)
+    // ============================
+    let questionCount = 0;
+    const urlUpdateQuizAjax = "{% url 'update_quiz_ajax' %}"; // URL Update
+    const urlGetQuizTemplate = "{% url 'get_quiz_data' 0 %}"; // URL Fetch Data
+
+    // Mode CREATE: Buka modal kosong
+    function openQuizModal(contentId, contentTitle) {
+        document.getElementById('quizForm').reset(); // Reset Form
+        document.getElementById('modal-quiz-content-id').value = contentId;
+        document.getElementById('modal-quiz-id').value = ""; // Kosongkan ID Quiz (Tanda ini Mode Create)
+        document.getElementById('quiz-parent-title').innerText = "Buat Quiz Baru";
+        
+        document.getElementById('questions-container').innerHTML = ''; 
+        questionCount = 0;
+        addQuestionField(); // Tambah 1 soal kosong
+        
+        document.getElementById('quizModal').classList.remove('hidden');
+    }
+
+    // Mode EDIT: Fetch data dulu, lalu buka modal terisi
+    async function editQuizAJAX(quizId, contentId, contentTitle) {
+        // Tampilkan Loading atau visual cue
+        const url = urlGetQuizTemplate.replace('0', quizId);
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if(data.status === 'success') {
+                // 1. Isi Form Utama
+                document.getElementById('modal-quiz-id').value = data.quiz_id;
+                document.getElementById('modal-quiz-content-id').value = contentId;
+                document.getElementById('quiz-title').value = data.title;
+                document.getElementById('quiz-desc').value = data.description;
+                document.getElementById('quiz-parent-title').innerText = "Edit Quiz";
+
+                // 2. Isi Soal-soal
+                document.getElementById('questions-container').innerHTML = ''; 
+                questionCount = 0;
+
+                if (data.questions.length > 0) {
+                    data.questions.forEach(q => {
+                        addQuestionField(q.text, q.a, q.b, q.c, q.d, q.correct);
+                    });
+                } else {
+                    addQuestionField(); // Jaga-jaga kalau soal kosong
+                }
+
+                // 3. Buka Modal
+                document.getElementById('quizModal').classList.remove('hidden');
+            } else {
+                showToast('Gagal mengambil data quiz', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
+        }
+    }
+
+    function closeQuizModal() {
+        document.getElementById('quizModal').classList.add('hidden');
+    }
+
+    // Fungsi Tambah Field Soal (Diupdate agar bisa menerima nilai default untuk Edit)
+    function addQuestionField(text='', a='', b='', c='', d='', correct='A') {
+        questionCount++;
+        const container = document.getElementById('questions-container');
+        const div = document.createElement('div');
+        div.className = "bg-gray-50 p-4 rounded-xl border border-gray-200 relative group animate-fade-in";
+        
+        // Helper untuk set 'selected' pada dropdown
+        const isSel = (val) => val === correct ? 'selected' : '';
+
+        div.innerHTML = `
+            <div class="absolute top-2 right-2 cursor-pointer text-gray-400 hover:text-red-500" onclick="this.parentElement.remove()">
+                <i data-feather="trash" class="w-4 h-4"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Soal ${questionCount}</p>
+            
+            <div class="mb-3">
+                <textarea name="q_text[]" required placeholder="Tulis pertanyaan..." class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:border-indigo-500 outline-none">${text}</textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <input type="text" name="opt_a[]" value="${a}" required placeholder="Pilihan A" class="border border-gray-300 rounded p-2 text-sm">
+                <input type="text" name="opt_b[]" value="${b}" required placeholder="Pilihan B" class="border border-gray-300 rounded p-2 text-sm">
+                <input type="text" name="opt_c[]" value="${c}" required placeholder="Pilihan C" class="border border-gray-300 rounded p-2 text-sm">
+                <input type="text" name="opt_d[]" value="${d}" required placeholder="Pilihan D" class="border border-gray-300 rounded p-2 text-sm">
+            </div>
+            
+            <div class="flex items-center">
+                <label class="text-xs font-bold text-gray-500 mr-2">Kunci Jawaban:</label>
+                <select name="correct_answer[]" class="border border-gray-300 rounded p-1 text-sm bg-white cursor-pointer hover:border-indigo-400">
+                    <option value="A" ${isSel('A')}>A</option>
+                    <option value="B" ${isSel('B')}>B</option>
+                    <option value="C" ${isSel('C')}>C</option>
+                    <option value="D" ${isSel('D')}>D</option>
+                </select>
+            </div>
+        `;
+        container.appendChild(div);
+        feather.replace();
+    }
+
+    // Handle Submit Quiz (Cerdas mendeteksi Create atau Update)
+    document.getElementById('quizForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('.btn-save-quiz');
+        const oldText = btn.innerText;
+        btn.innerText = 'Menyimpan...';
+        btn.disabled = true;
+
+        const formData = new FormData(this);
+        
+        // Cek apakah ini Edit (ada ID) atau Create (tidak ada ID)
+        const quizId = document.getElementById('modal-quiz-id').value;
+        const targetUrl = quizId ? urlUpdateQuizAjax : urlCreateQuizAjax; 
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const isEditMode = !!quizId; // Cek apakah ini edit atau create baru
+                const msg = isEditMode ? 'Quiz berhasil diperbarui!' : 'Quiz berhasil dibuat!';
+                showToast(msg, 'success');
+                
+                closeQuizModal();
+                
+                // 1. Ambil Data Penting
+                const contentId = document.getElementById('modal-quiz-content-id').value;
+                const wrapper = document.getElementById(`quiz-wrapper-${contentId}`);
+                
+                // Data dari Respon Server (PENTING: Backend harus kirim quiz_id)
+                // Jika mode Edit, kita pakai quizId lama. Jika Create, pakai data.quiz_id dari server.
+                const finalQuizId = isEditMode ? quizId : data.quiz_id; 
+                const finalTitle = formData.get('title');
+                const finalCount = document.querySelectorAll('[name="q_text[]"]').length; // Hitung soal manual dari form input
+
+                // 2. Susun HTML Card Quiz Baru (Tanpa Refresh)
+                wrapper.innerHTML = `
+                    <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-indigo-100 shadow-sm fade-in">
+                        <div class="flex items-center text-indigo-700">
+                            <div class="bg-indigo-100 p-2 rounded-lg mr-3">
+                                <i data-feather="check-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm">Quiz: ${finalTitle}</p>
+                                <p class="text-xs text-gray-500">${finalCount} Soal</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editQuizAJAX('${finalQuizId}', '${contentId}', '${finalTitle}')" 
+                                    class="text-indigo-400 hover:text-indigo-600 p-2 text-xs font-bold hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Quiz">
+                                <i data-feather="edit-2" class="w-4 h-4"></i>
+                            </button>
+                            
+                            <button onclick="triggerDeleteQuiz('${finalQuizId}', '${contentId}', '${finalTitle}')" 
+                                    class="text-red-400 hover:text-red-600 p-2 text-xs font-bold hover:bg-red-50 rounded-lg transition-colors" title="Hapus Quiz">
+                                <i data-feather="trash" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // 3. Render Icon Feather Ulang
+                feather.replace();
+
+            } else {
+                showToast('Gagal: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Terjadi kesalahan server.', 'error');
+        } finally {
+            btn.innerText = oldText;
+            btn.disabled = false;
+        }
+    });
+
+    // ============================
+    // TASK (TUGAS) Full AJAX (Create, Edit, Delete)
+    // ============================
+    
+    const urlGetTask = "{% url 'get_task_data' 0 %}";
+    const urlUpdateTask = "{% url 'update_task_ajax' %}";
+    const urlDeleteTask = "{% url 'delete_task_ajax' 0 %}";
+
+    // 1. Buka Modal Mode CREATE
+    function openTaskModal() {
+        document.getElementById('taskForm').reset();
+        document.getElementById('modal-task-id').value = ""; // Kosongkan ID = Mode Create
+        document.getElementById('task-modal-title').innerText = "Buat Tugas Baru";
+        document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    // 2. Buka Modal Mode EDIT (Fetch Data Dulu)
+    async function editTaskAJAX(taskId) {
+        const url = urlGetTask.replace('0', taskId);
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if(data.status === 'success') {
+                document.getElementById('modal-task-id').value = data.task_id;
+                document.getElementById('task-title').value = data.title;
+                document.getElementById('task-desc').value = data.description;
+                document.getElementById('task-deadline').value = data.deadline; // Format sudah YYYY-MM-DDTHH:MM dari server
+                
+                document.getElementById('task-modal-title').innerText = "Edit Tugas";
+                document.getElementById('taskModal').classList.remove('hidden');
+            } else {
+                showToast('Gagal ambil data tugas', 'error');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+    // 3. Handle Submit (Create & Update)
+    document.getElementById('taskForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('.btn-save-task');
+        const oldText = btn.innerText;
+        btn.innerText = 'Menyimpan...'; btn.disabled = true;
+
+        const formData = new FormData(this);
+        const taskId = document.getElementById('modal-task-id').value;
+        
+        // Pilih URL: Jika ada taskId berarti Update, jika tidak berarti Create
+        const targetUrl = taskId ? urlUpdateTask : urlCreateTaskAjax;
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showToast(data.message || 'Berhasil!', 'success');
+                closeTaskModal();
+
+                // UPDATE TAMPILAN SIDEBAR TANPA REFRESH
+                if (taskId) {
+                    // Logic UPDATE: Cari element lama, update teksnya
+                    const item = document.getElementById(`task-item-${taskId}`);
+                    if(item) {
+                        item.querySelector('.task-title-disp').innerText = data.title || formData.get('title');
+                        item.querySelector('.task-deadline-disp').innerText = "Deadline: " + (data.deadline || formData.get('deadline'));
+                        // Efek visual
+                        item.classList.add('bg-orange-50');
+                        setTimeout(() => item.classList.remove('bg-orange-50'), 1000);
+                    }
+                } else {
+                    // Logic CREATE: Append item baru ke atas
+                    const container = document.getElementById('task-list-container');
+                    const noTaskMsg = document.getElementById('no-task-msg');
+                    if(noTaskMsg) noTaskMsg.remove();
+
+                    // Kita butuh task_id baru dari server untuk tombol edit/hapus selanjutnya
+                    // Pastikan view create_task_ajax kamu mengembalikan 'task_id' juga (lihat catatan di bawah)
+                    // Jika view create belum return ID, tombol edit ini tidak akan jalan sampai refresh. 
+                    // Tapi visualnya sudah muncul.
+                    
+                    const newTaskHtml = `
+                        <div id="task-item-${data.task_id}" class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-sm hover:shadow-md transition-all group relative fade-in border-l-4 border-l-orange-500">
+                            <div class="absolute top-2 right-2 hidden group-hover:flex space-x-1">
+                                <button onclick="editTaskAJAX('${data.task_id}')" class="p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100"><i data-feather="edit-2" class="w-3 h-3"></i></button>
+                                <button onclick="triggerDeleteTask('${data.task_id}')" class="p-1 bg-red-50 text-red-600 rounded hover:bg-red-100"><i data-feather="trash" class="w-3 h-3"></i></button>
+                            </div>
+                            <p class="font-bold text-gray-800 task-title-disp">${data.new_task_title}</p>
+                            <p class="text-xs text-gray-500 mt-1 task-deadline-disp">Deadline: ${data.new_task_deadline}</p>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('afterbegin', newTaskHtml);
+                    feather.replace();
+                }
+                
+                if(!taskId) this.reset(); // Reset form jika create baru
+
+            } else {
+                showToast('Gagal: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Terjadi kesalahan server.', 'error');
+        } finally {
+            btn.innerText = oldText; btn.disabled = false;
+        }
+    });
+
+    // 4. Handle Delete Task
+    function triggerDeleteTask(taskId) {
+        openDeleteModal(() => executeDeleteTask(taskId), "Hapus Tugas?", "Tugas dan semua pengumpulan mahasiswa akan dihapus.");
+    }
+
+    async function executeDeleteTask(taskId) {
+        const url = urlDeleteTask.replace('0', taskId);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+            });
+            const data = await response.json();
+            
+            if(data.status === 'success') {
+                const item = document.getElementById(`task-item-${taskId}`);
+                if(item) {
+                    item.style.opacity = '0';
+                    setTimeout(() => item.remove(), 300);
+                }
+                showToast('Tugas dihapus', 'success');
+            } else {
+                showToast('Gagal hapus', 'error');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // ============================
+    // DELETE QUIZ AJAX (REVISI DENGAN MODAL)
+    // ============================
+
+    // 1. Fungsi Pemicu: Membuka Modal Konfirmasi
+    function triggerDeleteQuiz(quizId, contentId, contentTitle) {
+        openDeleteModal(
+            () => executeDeleteQuiz(quizId, contentId, contentTitle), // Callback jika user klik 'Ya'
+            "Hapus Quiz?", 
+            `Yakin menghapus Quiz pada materi "${contentTitle}"? Data soal dan nilai mahasiswa akan hilang permanen.`
+        );
+    }
+
+    // 2. Fungsi Eksekusi: Melakukan Request ke Server (Tanpa confirm alert lagi)
+    async function executeDeleteQuiz(quizId, contentId, contentTitle) {
+        // URL template django di-replace dengan ID quiz
+        const url = "{% url 'hapus_quiz' 0 %}".replace('0', quizId);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Cari wrapper quiz berdasarkan content_id
+                const wrapper = document.getElementById(`quiz-wrapper-${contentId}`);
+                
+                // Ganti tampilan Quiz Card menjadi Tombol Tambah Quiz
+                wrapper.innerHTML = `
+                    <button onclick="openQuizModal('${contentId}', '${contentTitle}')" class="text-sm text-gray-500 hover:text-indigo-600 font-bold flex items-center border border-dashed border-gray-300 px-4 py-3 rounded-lg w-full justify-center hover:border-indigo-300 hover:bg-white transition-all animate-fade-in">
+                        <i data-feather="plus-circle" class="w-4 h-4 mr-2"></i> Tambah Quiz untuk materi ini
+                    </button>
+                `;
+                
+                feather.replace();
+                showToast('Quiz berhasil dihapus', 'success');
+            } else {
+                showToast('Gagal: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Terjadi kesalahan koneksi', 'error');
+        }
+    }
+
+    // ============================
+    // CONTENT (MATERI) FULL AJAX
+    // ============================
+    const urlCreateContent = "{% url 'create_content_ajax' %}";
+    const urlUpdateContent = "{% url 'update_content_ajax' %}";
+
+    // Buka Modal Create
+    function openContentModal() {
+        document.getElementById('contentForm').reset();
+        document.getElementById('modal-content-id').value = ""; // Kosong = Mode Create
+        document.getElementById('contentModalTitle').innerText = "Tambah Halaman Materi";
+        document.getElementById('contentModal').classList.remove('hidden');
+    }
+
+    // Buka Modal Edit (Isi data ke form)
+    function openEditContentModal(id, title, text, video) {
+        document.getElementById('contentForm').reset();
+        document.getElementById('modal-content-id').value = id; // Ada ID = Mode Edit
+        document.getElementById('c_title').value = title;
+        document.getElementById('c_text').value = text;
+        document.getElementById('c_video').value = video;
+        
+        document.getElementById('contentModalTitle').innerText = "Edit Halaman Materi";
+        document.getElementById('contentModal').classList.remove('hidden');
+    }
+
+    function closeContentModal() { document.getElementById('contentModal').classList.add('hidden'); }
+
+    // Handle Submit (Create & Update)
+    document.getElementById('contentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('.btn-save-content');
+        const oldText = btn.innerText;
+        btn.innerText = 'Menyimpan...'; btn.disabled = true;
+
+        const formData = new FormData(this);
+        const contentId = document.getElementById('modal-content-id').value;
+        
+        // Tentukan URL: Edit atau Create?
+        const targetUrl = contentId ? urlUpdateContent : urlCreateContent;
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showToast(data.message, 'success');
+                closeContentModal();
+                
+                if (contentId) {
+                    // --- LOGIC UPDATE DOM (Tanpa Refresh) ---
+                    const card = document.getElementById(`content-card-${contentId}`);
+                    if (card) {
+                        // 1. Update Judul
+                        card.querySelector('.title-display').innerText = data.title;
+                        
+                        // 2. Update Badge Text/Video (Label kecil di atas)
+                        // Kita rebuild bagian badge ini
+                        let badgeHtml = '';
+                        if(data.text_content) badgeHtml += `<span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded mr-1">Teks</span>`;
+                        if(data.video_url) badgeHtml += `<span class="text-[10px] uppercase font-bold tracking-wider text-red-400 bg-red-50 px-2 py-0.5 rounded">Video</span>`;
+                        card.querySelector('.flex.space-x-2.mt-1').innerHTML = badgeHtml;
+
+                        // 3. Update Body (Preview Text & Video)
+                        let bodyHtml = '';
+                        if (data.text_content) {
+                            // Simple line break handling for preview
+                            bodyHtml += `<div class="prose prose-sm max-w-none text-gray-600 mb-4 text-preview">${data.text_content.replace(/\n/g, '<br>')}</div>`;
+                        }
+                        if (data.video_url) {
+                            bodyHtml += `
+                                bodyHtml += `
+                                    <div class="rounded-xl overflow-hidden bg-black aspect-video shadow-inner video-preview">
+                                        <iframe class="w-full h-full" src="${data.embed_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                                    </div>`;
+                        }
+                        card.querySelector('.content-body').innerHTML = bodyHtml;
+
+                        // 4. Update parameter tombol Edit (Agar pas diklik lagi datanya update)
+                        // Kita cari tombol edit di dalam card ini dan ganti atribut onclick-nya
+                        const editBtn = card.querySelector('button[title="Edit"]');
+                        // Escape string untuk JS agar tidak error kutip
+                        const safeTitle = data.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const safeText = data.text_content.replace(/'/g, "\\'").replace(/\r?\n/g, "\\n"); 
+                        
+                        editBtn.setAttribute('onclick', `openEditContentModal('${data.content_id}', '${safeTitle}', \`${safeText}\`, '${data.video_url}')`);
+                    }
+
+                } else {
+                    // --- LOGIC CREATE NEW DOM (Tanpa Refresh) ---
+                    const listContainer = document.getElementById('content-list');
+                    const emptyState = document.getElementById('empty-state');
+                    if(emptyState) emptyState.remove();
+                    
+                    const newCount = listContainer.children.length + 1;
+
+                    // Susun HTML Card Baru (Agak panjang tapi perlu agar fitur lain jalan)
+                    const safeTitle = data.title.replace(/'/g, "\\'");
+                    const safeText = data.text_content ? data.text_content.replace(/'/g, "\\'").replace(/\r?\n/g, "\\n") : '';
+
+                    const newCardHtml = `
+                    <div id="content-card-${data.content_id}" class="content-item bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md group fade-in" data-id="${data.content_id}">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="drag-handle cursor-move p-2 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Tahan & Geser untuk mengatur urutan">
+                                        <i data-feather="move" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="content-number bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">${newCount}</span>
+                                    <div class="flex-1 ml-2">
+                                        <h4 class="text-xl font-bold text-gray-800 title-display">${data.title}</h4>
+                                        <div class="flex space-x-2 mt-1">
+                                            ${data.text_content ? '<span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Teks</span>' : ''}
+                                            ${data.video_url ? '<span class="text-[10px] uppercase font-bold tracking-wider text-red-400 bg-red-50 px-2 py-0.5 rounded">Video</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="openEditContentModal('${data.content_id}', '${safeTitle}', \`${safeText}\`, '${data.video_url || ''}')" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                                        <i data-feather="edit-3" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="triggerDeleteContent('${data.content_id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Hapus">
+                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="pl-14 content-body">
+                                ${data.text_content ? `<div class="prose prose-sm max-w-none text-gray-600 mb-4 text-preview">${data.text_content.replace(/\n/g, '<br>')}</div>` : ''}
+                                ${data.video_url ? `<div class="rounded-xl overflow-hidden bg-black aspect-video shadow-inner video-preview"><iframe class="w-full h-full" src="${data.embed_url}" frameborder="0" allowfullscreen></iframe></div>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div id="quiz-wrapper-${data.content_id}" class="bg-gray-50 border-t border-gray-100 px-6 py-4 pl-14 sm:pl-20">
+                             <button onclick="openQuizModal('${data.content_id}', '${safeTitle}')" class="text-sm text-gray-500 hover:text-indigo-600 font-bold flex items-center border border-dashed border-gray-300 px-4 py-3 rounded-lg w-full justify-center hover:border-indigo-300 hover:bg-white transition-all">
+                                <i data-feather="plus-circle" class="w-4 h-4 mr-2"></i> Tambah Quiz untuk materi ini
+                            </button>
+                        </div>
+                    </div>`;
+
+                    listContainer.insertAdjacentHTML('beforeend', newCardHtml);
+                    feather.replace();
+                }
+            } else {
+                showToast('Gagal: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Terjadi kesalahan server.', 'error');
+        } finally {
+            btn.innerText = oldText; btn.disabled = false;
+        }
+    });
+
+    // ============================
+    // COMMON & HELPER
+    // ============================
+    let deleteCallback = null;
+    function openDeleteModal(callback, title = "Hapus Konten?", desc = "Tindakan ini tidak dapat dibatalkan.") {
+        deleteCallback = callback;
+        document.getElementById('deleteModalTitle').innerText = title;
+        document.getElementById('deleteModalDesc').innerText = desc;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    function closeDeleteModal() { document.getElementById('deleteModal').classList.add('hidden'); deleteCallback = null; }
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() { if (deleteCallback) { deleteCallback(); closeDeleteModal(); } });
+
+    function triggerDeleteContent(id) { openDeleteModal(() => executeDeleteContent(id), "Hapus Materi?", "Materi ini akan dihapus permanen."); }
+    function triggerDeleteModule() { openDeleteModal(() => document.getElementById('form-hapus-modul').submit(), "Hapus Modul?", "Semua konten dan tugas akan hilang."); }
+
+    // Update Numbers Sortable
+    function updateNumbers() {
+        const items = listContainer.querySelectorAll('.content-item');
+        items.forEach((item, index) => {
+            const numBadge = item.querySelector('.content-number');
+            if(numBadge) numBadge.innerText = index + 1;
+        });
+    }
+
+    async function saveOrder() {
+        const items = listContainer.querySelectorAll('.content-item');
+        const orderedIds = Array.from(items).map(item => item.getAttribute('data-id'));
+        try {
+            await fetch(reorderUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                body: JSON.stringify({ ordered_ids: orderedIds })
+            });
+        } catch (error) { console.error(error); }
+    }
+
+    async function submitContent(event) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = form.querySelector('.btn-save-content');
+        btn.disabled = true; btn.innerText = 'Menyimpan...';
+        try {
+            const response = await fetch(form.getAttribute('action'), {
+                method: 'POST', body: new FormData(form), headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            if (data.status === 'success') { window.location.reload(); }
+        } catch (error) { console.error(error); } 
+        finally { btn.disabled = false; btn.innerText = 'Simpan'; }
+    }
+
+    async function executeDeleteContent(id) {
+        try {
+            const response = await fetch(urlTemplateHapusKonten.replace('0', id), {
+                method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                const card = document.getElementById(`content-card-${id}`);
+                if (card) { card.remove(); updateNumbers(); showToast('Konten dihapus', 'success'); }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // Inline Edit Title/Desc
+    function toggleEdit(section, isEditing) {
+        const displayDiv = document.getElementById(section + '-display'); // Container yang akan disembunyikan
+        const formDiv = document.getElementById(section + '-form');     // Form yang akan dimunculkan
+        const input = document.getElementById('input-' + section);      // Input field
+
+        if (isEditing) {
+            // --- PERBAIKAN DI SINI ---
+            // Jika yang diedit adalah 'title', ambil teks dari span spesifik 'title-text'
+            // Jika bukan (misal description), ambil dari container displayDiv
+            let textSource;
+            if (section === 'title') {
+                textSource = document.getElementById('title-text');
+            } else {
+                textSource = displayDiv;
+            }
+
+            if(textSource) {
+                input.value = textSource.innerText.trim();
+            }
+
+            displayDiv.classList.add('hidden');
+            formDiv.classList.remove('hidden');
+            input.focus();
+        } else {
+            displayDiv.classList.remove('hidden');
+            formDiv.classList.add('hidden');
+        }
+        feather.replace();
+    }
+    
+    async function saveChanges(event, section) {
+        event.preventDefault();
+        const form = document.getElementById(section + '-form');
+        try {
+            const response = await fetch(urlTemplateEdit.replace('0', currentModuleId), {
+                method: 'POST', body: new FormData(form), headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                if(section === 'title') { document.getElementById('title-text').innerText = data.new_title; }
+                else if (section === 'description') { document.getElementById('description-display').innerText = data.new_description; }
+                toggleEdit(section, false);
+                showToast('Perubahan disimpan', 'success');
+            }
+        } catch (e) {}
+    }
+
+    function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+        toast.className = `${bgColor} text-white px-6 py-3 rounded-xl shadow-xl flex items-center transform transition-all duration-300 translate-x-full pointer-events-auto`;
+        toast.innerHTML = `<span class="font-bold">${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+        setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    // Styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .fade-in { animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    `;
+    document.head.appendChild(style);
+
+    feather.replace();
+</script>
+{% endblock %}
