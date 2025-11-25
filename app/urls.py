@@ -40,4 +40,6 @@ urlpatterns = [
 
     path('course/<int:course_id>/', views.course_detail, name='course_detail'),
     path('course/<int:course_id>/enroll/', views.enroll_course, name='enroll_course'),
+
+    path('api/content/<int:content_id>/', views.content_detail_api, name='content_detail_api'),
 ]

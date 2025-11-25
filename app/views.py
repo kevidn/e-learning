@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password
-from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, AssignmentFile, ModuleContent, Question
+from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, AssignmentFile, ModuleContent, Question, Submission
 from django.http import JsonResponse
 from django.db.models import Max
 from django.utils.dateparse import parse_datetime
@@ -799,3 +799,24 @@ def geser_konten_ajax(request, content_id, arah):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+def content_detail_api(request, content_id):
+    content = get_object_or_404(ModuleContent, pk=content_id)
+
+    video_url = None
+    # LOGIKA BARU: Panggil method dari model, sama seperti template dosen
+    if hasattr(content, 'get_embed_url') and callable(getattr(content, 'get_embed_url')):
+        video_url = content.get_embed_url()
+    elif content.video_url:
+        # Fallback jika ternyata bukan method
+        video_url = content.video_url
+
+    data = {
+        'status': 'success',
+        'id': content.content_id,
+        'title': content.title,
+        'text_content': content.text_content,
+        'video_url': video_url, # Ini sekarang berisi URL hasil olahan model
+        'type': 'video' if video_url else 'text',
+    }
+    return JsonResponse(data)
