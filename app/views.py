@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, AssignmentFile, ModuleContent, Question, Submission
 from django.http import JsonResponse
 from django.db.models import Max
 from django.utils.dateparse import parse_datetime
-from .forms import SignUpForm
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -824,17 +823,57 @@ def content_detail_api(request, content_id):
 
 def signup_view(request):
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Akun berhasil dibuat!')
-            return redirect('login_view')
-        else:
-            # --- TAMBAHKAN INI UNTUK DEBUG ---
-            print("FORM ERROR:", form.errors)
-            # ---------------------------------
-            messages.error(request, 'Terjadi kesalahan. Cek kembali inputan Anda.')
-    else:
-        form = SignUpForm()
+        # 1. Ambil input
+        nama = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        role_input = request.POST.get('role')
 
-    return render(request, 'signup.html', {'form': form})
+        # 2. Validasi Password
+        if password != confirm_password:
+            messages.error(request, 'Password dan konfirmasi password tidak sama.')
+            return render(request, 'signup.html')
+
+        # 3. Validasi Duplikat
+        # Cek apakah nama sudah dipakai (pastikan field di User adalah 'name' sesuai error sebelumnya)
+        if User.objects.filter(name=nama).exists():
+            messages.error(request, 'Nama pengguna ini sudah digunakan.')
+            return render(request, 'signup.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email ini sudah terdaftar sebelumnya.')
+            return render(request, 'signup.html')
+
+        # 4. Proses Simpan
+        try:
+            # --- PERBAIKAN DI SINI ---
+            # Error log bilang field-nya 'role_name', bukan 'name'
+            try:
+                role_instance = Role.objects.get(role_name=role_input)
+            except Role.DoesNotExist:
+                # Pesan error jika role 'mahasiswa' atau 'dosen' belum ada di database
+                messages.error(request, f'Peran "{role_input}" belum tersedia di database.')
+                return render(request, 'signup.html')
+
+            # Simpan User
+            User.objects.create(
+                name=nama,
+                email=email,
+                password=make_password(password),
+                role=role_instance  # Masukkan objek role yang ditemukan
+            )
+
+            messages.success(request, 'Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.')
+            return redirect('login_view')
+
+        except Exception as e:
+            # Print error asli ke terminal untuk Anda (developer)
+            print(f"System Error: {e}") 
+            
+            # Tampilkan pesan error yang sedikit lebih detail ke user (tapi tidak terlalu teknis)
+            # Pesan ini akan muncul jika ada masalah database lain (misal koneksi putus)
+            messages.error(request, 'Gagal menyimpan data. Pastikan semua kolom terisi dengan benar.')
+            return render(request, 'signup.html')
+
+    return render(request, 'signup.html')
