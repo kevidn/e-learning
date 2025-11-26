@@ -10,49 +10,31 @@
 
 {# --- 1. LEFT SIDEBAR REPLACEMENT --- #}
 {% block sidebar_menu %}
-<div class="flex flex-col h-full justify-between">
+<div class="flex flex-col h-full">
     <div class="space-y-1 px-2">
-        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-2">Menu</p>
+        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-2">Menu Utama</p>
         
-        <a href="{% url 'mahasiswa_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-orange-50 text-orange-600 font-bold relative">
+        {# 1. OVERVIEW (Aktif di halaman Dashboard) #}
+        <a href="{% url 'mahasiswa_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-orange-50 text-orange-600 font-bold relative transition-all">
             <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-orange-500 rounded-r-full"></div>
-            <i data-feather="grid" class="w-5 h-5"></i><span>Overview</span>
+            <i data-feather="grid" class="w-5 h-5"></i>
+            <span>Overview</span>
         </a>
+
+        {# 2. MY LEARNING (Belum ada URL, pakai # sementara) #}
         <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="book-open" class="w-5 h-5"></i><span>Lessons</span>
+            <i data-feather="book-open" class="w-5 h-5"></i>
+            <span>My Learning</span>
         </a>
+
+        {# 3. PROFILE (Belum ada URL, pakai # sementara) #}
         <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="award" class="w-5 h-5"></i><span>Leaderboard</span>
-        </a>
-        <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="activity" class="w-5 h-5"></i><span>Skill Graph</span>
-        </a>
-        <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="message-square" class="w-5 h-5"></i>
-            <span>Messages</span>
-            <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-auto">5</span>
-        </a>
-        <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="settings" class="w-5 h-5"></i><span>Settings</span>
+            <i data-feather="user" class="w-5 h-5"></i>
+            <span>Profile</span>
         </a>
     </div>
 
-    <div class="px-4 pb-6">
-        <div class="bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl p-5 text-white relative overflow-hidden shadow-lg">
-            <div class="relative z-10">
-                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3 backdrop-blur-sm">
-                    <i data-feather="zap" class="w-5 h-5 text-white"></i>
-                </div>
-                <h4 class="font-bold text-lg mb-1">Get Premium!</h4>
-                <p class="text-orange-100 text-xs mb-3">Unlock special features.</p>
-                <button class="w-full bg-white text-orange-600 text-xs font-bold py-2 rounded-lg hover:bg-orange-50 transition-colors">
-                    Upgrade Now
-                </button>
-            </div>
-            <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
-        </div>
     </div>
-</div>
 {% endblock %}
 
 
