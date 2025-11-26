@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
 import json
 
 def login_view(request):
@@ -877,3 +878,14 @@ def signup_view(request):
             return render(request, 'signup.html')
 
     return render(request, 'signup.html')
+
+def my_learning(request):
+    # Query ini hanya akan jalan jika user sudah login (berkat @login_required)
+    # Pastikan menggunakan 'user=request.user' (bukan student=...)
+    my_enrollments = Enrollment.objects.filter(user=request.user).select_related('course', 'course__lecturer')
+
+    context = {
+        'enrollments': my_enrollments,
+        'nama_mahasiswa': request.user.first_name 
+    }
+    return render(request, 'mahasiswa/my_learning.html', context)
