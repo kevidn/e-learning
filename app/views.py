@@ -5,6 +5,7 @@ from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, As
 from django.http import JsonResponse
 from django.db.models import Max
 from django.utils.dateparse import parse_datetime
+from .forms import SignUpForm
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -820,3 +821,20 @@ def content_detail_api(request, content_id):
         'type': 'video' if video_url else 'text',
     }
     return JsonResponse(data)
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Akun berhasil dibuat!')
+            return redirect('login_view')
+        else:
+            # --- TAMBAHKAN INI UNTUK DEBUG ---
+            print("FORM ERROR:", form.errors)
+            # ---------------------------------
+            messages.error(request, 'Terjadi kesalahan. Cek kembali inputan Anda.')
+    else:
+        form = SignUpForm()
+
+    return render(request, 'signup.html', {'form': form})

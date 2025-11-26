@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | E-Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center min-h-screen p-4">
+
+<div class="absolute inset-0 overflow-hidden">
+    <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-blue-100 opacity-20 blur-3xl"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full bg-indigo-100 opacity-20 blur-3xl"></div>
+    <div class="absolute top-1/3 right-1/3 w-56 h-56 rounded-full bg-purple-100 opacity-15 blur-3xl"></div>
+</div>
+
+<form method="POST" class="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl w-full max-w-md relative z-10 border border-white/20">
+    {% csrf_token %}
+
+    <div class="flex justify-center mb-6">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-xl shadow-md">
+            <i data-feather="user-plus" class="text-white w-8 h-8"></i>
+        </div>
+    </div>
+    <h2 class="text-3xl font-bold mb-2 text-center text-gray-800">Create Account</h2>
+    <p class="text-gray-500 text-center mb-6">Join us and start learning today</p>
+
+    {% if form.errors %}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded text-sm" role="alert">
+        <p class="font-bold">Please correct the error below:</p>
+        {% for field in form %}
+        {% for error in field.errors %}
+        <p>- {{ error }}</p>
+        {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+        <p>- {{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="space-y-4">
+
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i data-feather="user" class="text-gray-400 w-5 h-5"></i>
+            </div>
+            {{ form.username }}
+        </div>
+
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i data-feather="mail" class="text-gray-400 w-5 h-5"></i>
+            </div>
+            {{ form.email }}
+        </div>
+
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i data-feather="briefcase" class="text-gray-400 w-5 h-5"></i>
+            </div>
+            {{ form.role }}
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <i data-feather="chevron-down" class="text-gray-400 w-5 h-5"></i>
+            </div>
+        </div>
+
+        {% for field in form %}
+        {% if 'password' in field.name %}
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i data-feather="lock" class="text-gray-400 w-5 h-5"></i>
+            </div>
+            {{ field }}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <button type="submit"
+                class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 shadow-md hover:shadow-lg mt-4">
+            Sign Up
+        </button>
+    </div>
+
+    <div class="mt-6 text-center text-sm text-gray-500">
+        Already have an account? <a href="{% url 'login_view' %}" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">Sign In</a>
+    </div>
+</form>
+
+<script>
+    feather.replace();
+</script>
+</body>
+</html>
