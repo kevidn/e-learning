@@ -170,6 +170,7 @@ class Grade(models.Model):
     assignment = models.ForeignKey(Assignment, models.DO_NOTHING, blank=True, null=True)
     quiz = models.ForeignKey(Quiz, models.DO_NOTHING, blank=True, null=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    feedback = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = True
