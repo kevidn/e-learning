@@ -1,15 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
-from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, AssignmentFile, ModuleContent, Question, Submission
+from .models import User, Role, Module, Course, Enrollment, Assignment, Quiz, AssignmentFile, ModuleContent, Question, Submission, Discussion, Grade, Message
 from django.http import JsonResponse
-from django.db.models import Max
+from django.db.models import Max, Count, Avg, Q
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib.auth import update_session_auth_hash
 import json
 
 def login_view(request):
@@ -70,30 +73,15 @@ def logout_view(request):
 
 def dosen_dashboard(request):
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
-        messages.error(request, 'Akses ditolak. Dosen only.')
         return redirect('login_view')
-
     user_id = request.session['user_id']
     nama_dosen = request.session.get('name', 'Dosen')
-
     courses = Course.objects.filter(lecturer_id=user_id)
-    
     modules = Module.objects.filter(course__in=courses).order_by('-created_at')
-
-    total_courses = courses.count()
-    total_modules = modules.count()
-    total_students = Enrollment.objects.filter(course__in=courses).count()
-
-    context = {
-        'nama_dosen': nama_dosen,
-        'courses': courses,
-        'modules': modules,        
-        'total_courses': total_courses,
-        'total_modules': total_modules,
-        'total_students': total_students
-    }
+    context = {'nama_dosen': nama_dosen, 'courses': courses, 'modules': modules, 
+               'total_courses': courses.count(), 'total_modules': modules.count(), 
+               'total_students': Enrollment.objects.filter(course__in=courses).count()}
     return render(request, 'dosen_dashboard.html', context)
-
 
 def detail_modul_dosen(request, modul_id):
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
@@ -190,38 +178,93 @@ def mahasiswa_dashboard(request):
     user_id = request.session['user_id']
     nama_mahasiswa = request.session.get('name', 'Mahasiswa')
     
-    # 1. Active Courses (Enrolled)
+    # 1. Enrollment & Progress Real-time
     enrollments = Enrollment.objects.filter(user_id=user_id).select_related('course', 'last_module')
     
     active_courses = []
+    enrolled_course_ids = [] # Simpan ID untuk query selanjutnya
+    total_modules_done_all = 0 # Total modul selesai semua course
+
     for enroll in enrollments:
+        enrolled_course_ids.append(enroll.course.course_id)
         course = enroll.course
-        # Calculate logic (Simplified for now)
-        total_modules = Module.objects.filter(course=course).count()
         
-        # Determine resume link: Last accessed module OR first module
-        resume_id = enroll.last_module.module_id if enroll.last_module else None
-        if not resume_id:
-            first_mod = Module.objects.filter(course=course).order_by('created_at').first()
-            if first_mod: resume_id = first_mod.module_id
+        # Hitung Progress
+        # Ambil semua modul di course ini urut berdasarkan pembuatan
+        course_modules = Module.objects.filter(course=course).order_by('created_at')
+        mod_ids = list(course_modules.values_list('module_id', flat=True))
+        total_mods = len(mod_ids)
+        
+        completed_count = 0
+        resume_id = None
+        
+        if enroll.last_module and enroll.last_module.module_id in mod_ids:
+            # Asumsi: jika last_module adalah modul ke-3, berarti sudah baca 3 modul
+            current_index = mod_ids.index(enroll.last_module.module_id)
+            completed_count = current_index + 1
+            resume_id = enroll.last_module.module_id
+        elif total_mods > 0:
+            # Kalau belum pernah baca, mulai dari modul pertama
+            resume_id = mod_ids[0]
+
+        progress = int((completed_count / total_mods) * 100) if total_mods > 0 else 0
+        total_modules_done_all += completed_count
 
         active_courses.append({
             'course': course,
-            'total_modules': total_modules,
+            'total_modules': total_mods,
             'first_module_id': resume_id,
-            'progress_percent': 0, # Implement progress logic here if needed
-            'completed_count': 0
+            'progress_percent': progress,
+            'completed_count': completed_count
         })
 
-    # 2. [UPDATED] Available Courses (Fetch ALL for recommendation cards)
-    # Exclude courses user is already enrolled in if you prefer, 
-    # but fetching all is fine since Detail Page handles "Already Enrolled" status.
-    available_courses = Course.objects.all().select_related('lecturer')
+    # --- 2. DATA STATISTIK REAL (SIDEBAR) ---
+    
+    # A. Tugas Selesai (Count Submission)
+    assignments_done = Submission.objects.filter(student_id=user_id).count()
+    
+    # B. Rata-rata Nilai (Dari Model Grade)
+    avg_data = Grade.objects.filter(user_id=user_id).aggregate(Avg('score'))
+    avg_score = avg_data['score__avg'] or 0 # Kalau belum ada nilai, set 0
+    
+    # C. Poin Keaktifan (Rumus Sederhana: Tugas*50 + Modul*10 + Diskusi*5)
+    discussion_count = Discussion.objects.filter(user_id=user_id).count()
+    total_points = (assignments_done * 50) + (total_modules_done_all * 10) + (discussion_count * 5)
+
+    # D. Tugas Pending (Deadline Terdekat)
+    # Cari assignment di course yang diikuti, TAPI belum ada di Submission user
+    all_assignments = Assignment.objects.filter(
+        module__course__course_id__in=enrolled_course_ids
+    ).order_by('deadline')
+    
+    pending_tasks = []
+    for a in all_assignments:
+        if not Submission.objects.filter(assignment=a, student_id=user_id).exists():
+            pending_tasks.append(a)
+            if len(pending_tasks) >= 3: break # Ambil 3 saja
+
+    # E. Diskusi Terbaru (Dari semua kelas yang diikuti)
+    recent_discussions = Discussion.objects.filter(
+        course_id__in=enrolled_course_ids
+    ).select_related('user', 'course').order_by('-created_at')[:4]
+
+    # Available Courses (Kecuali yang sudah diambil)
+    available_courses = Course.objects.exclude(course_id__in=enrolled_course_ids).select_related('lecturer')
 
     context = {
         'nama_mahasiswa': nama_mahasiswa,
         'active_courses': active_courses,
-        'available_courses': available_courses  # Pass this to template
+        'available_courses': available_courses,
+        # Kirim Data Statistik Baru
+        'stats': {
+            'modules_done': total_modules_done_all,
+            'assignments_done': assignments_done,
+            'avg_score': round(avg_score, 1),
+            'points': total_points,
+            'courses_count': len(enrolled_course_ids)
+        },
+        'pending_tasks': pending_tasks,
+        'recent_discussions': recent_discussions
     }
     return render(request, 'mahasiswa_dashboard.html', context)
 
@@ -316,9 +359,12 @@ def detail_modul(request, modul_id):
     # 6. Assignments & Submission Logic
     assignment = Assignment.objects.filter(module=module).first() # Assuming 1 assignment per module
     submission = None
+    grade = None
     
     if assignment:
         submission = Submission.objects.filter(assignment=assignment, student_id=user_id).first()
+
+        grade = Grade.objects.filter(assignment=assignment, user_id=user_id).first()
 
         # Handle POST: Upload Submission
         if request.method == 'POST' and not submission:
@@ -355,6 +401,7 @@ def detail_modul(request, modul_id):
         'next_module': next_module,
         'assignment': assignment,
         'submission': submission,
+        'grade': grade,
     }
 
     return render(request, 'modul/detail_modul.html', context)
@@ -803,21 +850,56 @@ def geser_konten_ajax(request, content_id, arah):
 def content_detail_api(request, content_id):
     content = get_object_or_404(ModuleContent, pk=content_id)
 
+    # 1. Logika Video URL (Sama seperti sebelumnya)
     video_url = None
-    # LOGIKA BARU: Panggil method dari model, sama seperti template dosen
     if hasattr(content, 'get_embed_url') and callable(getattr(content, 'get_embed_url')):
         video_url = content.get_embed_url()
     elif content.video_url:
-        # Fallback jika ternyata bukan method
         video_url = content.video_url
 
+    # 2. LOGIKA BARU: DATA QUIZ
+    quiz_data = None
+    # Cek apakah konten ini punya kuis (menggunakan related_name 'quiz' dari OneToOneField)
+    if hasattr(content, 'quiz'):
+        quiz = content.quiz
+        user_id = request.session.get('user_id')
+        
+        # Cek apakah user sudah mengerjakan?
+        existing_grade = Grade.objects.filter(user_id=user_id, quiz=quiz).first()
+        
+        questions_list = []
+        # Jika belum dikerjakan, kirim daftar soal
+        if not existing_grade:
+            for q in quiz.questions.all():
+                questions_list.append({
+                    'id': q.question_id,
+                    'text': q.question_text,
+                    'options': [
+                        {'key': 'A', 'val': q.option_a},
+                        {'key': 'B', 'val': q.option_b},
+                        {'key': 'C', 'val': q.option_c},
+                        {'key': 'D', 'val': q.option_d},
+                    ]
+                })
+        
+        quiz_data = {
+            'id': quiz.quiz_id,
+            'title': quiz.title,
+            'description': quiz.description,
+            'is_completed': existing_grade is not None,
+            'score': existing_grade.score if existing_grade else 0,
+            'questions': questions_list
+        }
+
+    # 3. Susun Response Akhir
     data = {
         'status': 'success',
         'id': content.content_id,
         'title': content.title,
         'text_content': content.text_content,
-        'video_url': video_url, # Ini sekarang berisi URL hasil olahan model
+        'video_url': video_url,
         'type': 'video' if video_url else 'text',
+        'quiz': quiz_data 
     }
     return JsonResponse(data)
 
@@ -877,3 +959,558 @@ def signup_view(request):
             return render(request, 'signup.html')
 
     return render(request, 'signup.html')
+
+def my_learning(request):
+    # 1. Cek Login Session
+    if not request.session.get('user_id'):
+        return redirect('login_view')
+
+    user_id = request.session['user_id']
+    
+    # 2. Ambil Enrollment (Daftar kursus yang diambil user)
+    # Gunakan select_related untuk performa (mengambil data relasi sekaligus)
+    enrollments_query = Enrollment.objects.filter(user_id=user_id).select_related('course', 'course__lecturer', 'last_module')
+    
+    # List baru untuk menampung data yang sudah dihitung progress-nya
+    enrollments_data = []
+    
+    for enroll in enrollments_query:
+        # --- LOGIKA HITUNG PROGRESS ---
+        
+        # A. Ambil semua modul di course ini (diurutkan sesuai urutan belajar)
+        # Pastikan order_by sama dengan yang dipakai di tampilan modul (misal: created_at atau id)
+        modules = Module.objects.filter(course=enroll.course).order_by('created_at')
+        total_modules = modules.count()
+        
+        completed_count = 0
+        progress_percent = 0
+        resume_id = None
+        
+        # B. Hitung posisi user saat ini
+        if total_modules > 0:
+            # Tentukan ID modul untuk tombol "Lanjut Belajar"
+            if enroll.last_module:
+                resume_id = enroll.last_module.module_id
+                
+                # Hitung progress: Cari index modul terakhir di dalam list semua modul
+                # Contoh: Jika user di modul ke-3 dari 10, maka progress = 30%
+                module_list = list(modules) # Convert queryset ke list agar bisa cari index
+                try:
+                    # index() mulai dari 0, jadi tambah 1
+                    current_index = module_list.index(enroll.last_module)
+                    completed_count = current_index + 1
+                    progress_percent = int((completed_count / total_modules) * 100)
+                except ValueError:
+                    # Jika last_module user ternyata sudah dihapus dosen, reset ke 0
+                    completed_count = 0
+            else:
+                # Jika belum pernah buka modul, arahkan ke modul pertama
+                first_mod = modules.first()
+                if first_mod:
+                    resume_id = first_mod.module_id
+        
+        # C. Tempelkan hasil hitungan ke objek enrollment
+        # (Teknik ini disebut 'monkey patching' atribut sementara untuk dikirim ke template)
+        enroll.total_modules = total_modules
+        enroll.completed_count = completed_count
+        enroll.progress_percent = progress_percent
+        enroll.first_module_id = resume_id # Field ini dipakai tombol di template
+        
+        enrollments_data.append(enroll)
+
+    context = {
+        'enrollments': enrollments_data,
+        'nama_mahasiswa': request.session.get('name', 'Mahasiswa') 
+    }
+    return render(request, 'mahasiswa/my_learning.html', context)
+
+def profile_view(request):
+    # 1. Ambil user_id dari session (Sistem login manual Anda)
+    user_id = request.session.get('user_id')
+    
+    if not user_id:
+        return redirect('login_view')
+    
+    try:
+        # 2. Ambil objek User manual dari database
+        user = User.objects.get(user_id=user_id)
+    except User.DoesNotExist:
+        # Jika user di session tidak ada di DB, logout paksa
+        return redirect('logout_view')
+
+    # 3. Kirim objek 'user' manual ini ke template
+    context = {
+        'user': user,  # Sekarang template bisa akses {{ user.email }}, {{ user.username }}, dll
+        'role': request.session.get('role_name')
+    }
+    return render(request, 'profile.html', context)
+
+
+def update_profile_ajax(request):
+    # 1. Cek Login via Session
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return JsonResponse({'status': 'error', 'message': 'Sesi habis, silakan login kembali.'})
+
+    try:
+        user = User.objects.get(user_id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User tidak ditemukan.'})
+
+    action = request.POST.get('action')
+
+    try:
+        # --- CASE 1: UPDATE INFO PRIBADI ---
+        if action == 'update_info':
+            # Gunakan .get() agar tidak error jika key tidak dikirim
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            # Catatan: Di User model Anda sepertinya field-nya 'name', bukan first_name/last_name
+            # Sesuaikan dengan model Anda. Jika model pakai 'name', gabungkan atau pakai salah satu.
+            # Asumsi dari kode login: user.name
+            
+            # Jika form mengirim first_name & last_name, kita gabung jadi name (karena User model pakai name)
+            first_name = request.POST.get('first_name', '')
+            last_name = request.POST.get('last_name', '')
+            
+            # Logic: Jika form Profile Anda inputnya 'username', simpan ke field 'name' di DB
+            if username and username != user.name:
+                if User.objects.filter(name=username).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Username sudah digunakan orang lain.'})
+                user.name = username
+            
+            if email and email != user.email:
+                if User.objects.filter(email=email).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Email sudah digunakan.'})
+                user.email = email
+
+            user.save()
+            
+            # Update Session Data agar sidebar langsung berubah
+            request.session['name'] = user.name
+
+            return JsonResponse({'status': 'success', 'message': 'Profil berhasil diperbarui!'})
+
+        # --- CASE 2: GANTI PASSWORD ---
+        elif action == 'change_password':
+            old_pass = request.POST.get('old_password')
+            new_pass = request.POST.get('new_password')
+            confirm_pass = request.POST.get('confirm_password')
+
+            # 1. Validasi Password Lama (Manual Hashing Check)
+            if not check_password(old_pass, user.password):
+                return JsonResponse({'status': 'error', 'message': 'Password saat ini salah.'})
+
+            # 2. Validasi Match Password Baru
+            if new_pass != confirm_pass:
+                return JsonResponse({'status': 'error', 'message': 'Konfirmasi password baru tidak cocok.'})
+            
+            # 3. Simpan Password (Manual Hashing Make)
+            user.password = make_password(new_pass)
+            user.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Password berhasil diubah!'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Terjadi kesalahan: {str(e)}'})
+
+    return JsonResponse({'status': 'error', 'message': 'Aksi tidak valid.'})
+
+def chat_index(request):
+    # Redirect ke course pertama yang dimiliki user agar tidak kosong
+    user_id = request.session.get('user_id')
+    if not user_id: return redirect('login_view')
+
+    # Cari course dimana user terdaftar (untuk mhs) atau pengajar (untuk dosen)
+    if request.session.get('role_name') == 'Dosen':
+        first_course = Course.objects.filter(lecturer_id=user_id).first()
+    else:
+        enrollment = Enrollment.objects.filter(user_id=user_id).first()
+        first_course = enrollment.course if enrollment else None
+
+    if first_course:
+        return redirect('chat_room', course_id=first_course.course_id)
+    
+    return render(request, 'chat/empty.html') # Buat template simple jika belum ada course
+
+def chat_room(request, course_id):
+    user_id = request.session.get('user_id')
+    if not user_id: return redirect('login_view')
+
+    current_course = get_object_or_404(Course, course_id=course_id)
+    
+    # Ambil daftar course untuk Sidebar Chat (Agar bisa ganti room)
+    if request.session.get('role_name') == 'Dosen':
+        my_courses = Course.objects.filter(lecturer_id=user_id)
+    else:
+        # Untuk mahasiswa, ambil dari enrollment
+        enrollments = Enrollment.objects.filter(user_id=user_id).select_related('course')
+        my_courses = [e.course for e in enrollments]
+
+    context = {
+        'current_course': current_course,
+        'my_courses': my_courses,
+        'user_id': user_id,
+        'user_name': request.session.get('name')
+    }
+    return render(request, 'chat/room.html', context)
+
+def send_chat_ajax(request):
+    if request.method == 'POST':
+        user_id = request.session.get('user_id')
+        course_id = request.POST.get('course_id')
+        message_text = request.POST.get('message')
+
+        if message_text and course_id:
+            try:
+                user = User.objects.get(user_id=user_id)
+                course = Course.objects.get(course_id=course_id)
+                
+                Discussion.objects.create(
+                    user=user,
+                    course=course,
+                    message=message_text
+                )
+                return JsonResponse({'status': 'success'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error'})
+
+def get_chat_ajax(request, course_id):
+    # 1. Ambil Info Course (TAMBAHAN BARU)
+    try:
+        course = Course.objects.select_related('lecturer').get(course_id=course_id)
+    except Course.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Kelas tidak ditemukan'})
+
+    last_id = request.GET.get('last_id', 0)
+    
+    chats = Discussion.objects.filter(
+        course_id=course_id, 
+        discussion_id__gt=last_id 
+    ).select_related('user').order_by('created_at')
+
+    data = []
+    for chat in chats:
+        time_str = chat.created_at.strftime("%H:%M")
+        is_me = chat.user.user_id == request.session.get('user_id')
+        
+        data.append({
+            'id': chat.discussion_id,
+            'user': chat.user.name,
+            'role': chat.user.role.role_name if chat.user.role else 'User',
+            'message': chat.message,
+            'time': time_str,
+            'is_me': is_me,
+            'avatar': chat.user.name[0]
+        })
+    
+    return JsonResponse({
+        'status': 'success', 
+        'course_name': course.course_name,
+        'lecturer_name': course.lecturer.name if course.lecturer else "Tim Pengajar",
+        'messages': data
+    })
+
+def get_grades_data(request, type, item_id):
+    # Proteksi Dosen
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+
+    try:
+        # 1. Tentukan Context (Assignment atau Quiz) & Course-nya
+        course = None
+        item_title = ""
+        
+        if type == 'assignment':
+            item = Assignment.objects.get(assignment_id=item_id)
+            course = item.module.course
+            item_title = item.title
+        elif type == 'quiz':
+            item = Quiz.objects.get(quiz_id=item_id)
+            course = item.content.module.course
+            item_title = item.title
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid type'})
+
+        # 2. Ambil Semua Mahasiswa yang Terdaftar di Course ini
+        enrollments = Enrollment.objects.filter(course=course).select_related('user').order_by('user__name')
+        
+        student_data = []
+        for enroll in enrollments:
+            student = enroll.user
+            
+            # 3. Cari Nilai (Grade) yang sudah ada
+            grade_obj = None
+            if type == 'assignment':
+                grade_obj = Grade.objects.filter(enrollment=enroll, assignment=item).first()
+            else:
+                grade_obj = Grade.objects.filter(enrollment=enroll, quiz=item).first()
+            
+            score = grade_obj.score if grade_obj else 0
+
+            feedback = grade_obj.feedback if grade_obj else ""
+            
+            # 4. Info Tambahan (Status Pengumpulan Tugas)
+            submission_status = "-"
+            submission_file = None
+            submitted_at = None
+            
+            if type == 'assignment':
+                sub = Submission.objects.filter(assignment=item, student=student).first()
+                if sub:
+                    submission_status = "Diserahkan"
+                    submission_file = sub.file_url
+                    submitted_at = sub.submitted_at.strftime("%d %b %H:%M")
+                else:
+                    submission_status = "Belum menyerahkan"
+            elif type == 'quiz':
+                # Logika quiz otomatis (jika ada) bisa ditaruh sini
+                submission_status = "Selesai" if grade_obj else "Belum dikerjakan"
+
+            student_data.append({
+                'student_id': student.user_id,
+                'name': student.name,
+                'avatar': student.name[0],
+                'score': score,
+                'feedback': feedback,
+                'status': submission_status,
+                'file_url': submission_file,
+                'submitted_at': submitted_at
+            })
+
+        return JsonResponse({
+            'status': 'success',
+            'title': item_title,
+            'students': student_data
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+def update_grade_ajax(request):
+    if request.method == 'POST':
+        if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+
+        try:
+            student_id = request.POST.get('student_id')
+            item_type = request.POST.get('type')
+            item_id = request.POST.get('item_id')
+            score = request.POST.get('score')
+            feedback = request.POST.get('feedback')  # <--- Ambil data feedback
+
+            student = User.objects.get(user_id=student_id)
+            dosen = User.objects.get(user_id=request.session['user_id']) # Dosen pengirim pesan
+            
+            course = None
+            assignment = None
+            quiz = None
+            item_title = ""
+
+            if item_type == 'assignment':
+                assignment = Assignment.objects.get(assignment_id=item_id)
+                course = assignment.module.course
+                item_title = assignment.title
+            elif item_type == 'quiz':
+                quiz = Quiz.objects.get(quiz_id=item_id)
+                course = quiz.content.module.course
+                item_title = quiz.title
+
+            enrollment = Enrollment.objects.get(user=student, course=course)
+
+            # 1. Update/Create Grade
+            grade, created = Grade.objects.update_or_create(
+                enrollment=enrollment,
+                assignment=assignment,
+                quiz=quiz,
+                defaults={
+                    'user': student,
+                    'course': course,
+                    'score': score,
+                    'feedback': feedback # Simpan feedback
+                }
+            )
+
+            # 2. LOGIKA CHAT OTOMATIS
+            # Hanya kirim chat jika ada feedback yang ditulis
+            if feedback:
+                # Format pesan notifikasi
+                pesan_review = f"[Otomatis] Review Tugas '{item_title}':\n\nNilai: {score}\nCatatan: {feedback}"
+                
+                # Cek apakah pesan serupa sudah dikirim baru-baru ini agar tidak spam (opsional)
+                # Di sini kita langsung kirim saja
+                Message.objects.create(
+                    sender=dosen,
+                    receiver=student,
+                    message_text=pesan_review
+                )
+
+            return JsonResponse({'status': 'success', 'message': 'Nilai & Review tersimpan, notifikasi terkirim.'})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error'})
+
+def submit_quiz_ajax(request):
+    if request.method == 'POST':
+        user_id = request.session.get('user_id')
+        if not user_id: 
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+        
+        try:
+            quiz_id = request.POST.get('quiz_id')
+            user = User.objects.get(user_id=user_id)
+            quiz = Quiz.objects.get(quiz_id=quiz_id)
+            
+            # Ambil Enrollment (Untuk dikaitkan dengan Grade)
+            enrollment = Enrollment.objects.filter(user=user, course=quiz.content.module.course).first()
+            
+            # Logika Penilaian Otomatis
+            questions = quiz.questions.all()
+            total_questions = questions.count()
+            correct_count = 0
+            
+            if total_questions == 0:
+                return JsonResponse({'status': 'error', 'message': 'Quiz ini belum memiliki soal.'})
+
+            # Loop setiap soal dan cek jawaban
+            for q in questions:
+                # Jawaban dikirim dengan format name="answers[ID_SOAL]"
+                submitted_answer = request.POST.get(f'answers[{q.question_id}]')
+                if submitted_answer == q.correct_answer:
+                    correct_count += 1
+            
+            # Hitung Nilai (Skala 100)
+            final_score = (correct_count / total_questions) * 100
+            
+            # Simpan ke Database (Update jika sudah ada, Create jika belum)
+            Grade.objects.update_or_create(
+                user=user,
+                quiz=quiz,
+                defaults={
+                    'course': quiz.content.module.course,
+                    'enrollment': enrollment,
+                    'score': final_score
+                }
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'score': final_score,
+                'correct_count': correct_count,
+                'total_questions': total_questions,
+                'message': f'Kuis selesai! Nilai Anda: {final_score}'
+            })
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+            
+    return JsonResponse({'status': 'error'})
+
+def get_contact_list(user_id, role_name):
+    """
+    Helper untuk mendapatkan daftar kontak yang relevan.
+    - Mahasiswa melihat Dosen dari kelas yang diikuti.
+    - Dosen melihat Mahasiswa yang ada di kelasnya.
+    """
+    contacts = []
+    
+    if role_name == 'Mahasiswa':
+        # Ambil enrollment -> Ambil Course -> Ambil Dosen
+        enrollments = Enrollment.objects.filter(user_id=user_id).select_related('course__lecturer')
+        lecturer_ids = enrollments.values_list('course__lecturer_id', flat=True).distinct()
+        contacts = User.objects.filter(user_id__in=lecturer_ids)
+        
+    elif role_name == 'Dosen':
+        # Ambil Course saya -> Ambil Enrollment di course itu -> Ambil User (Mahasiswa)
+        my_courses = Course.objects.filter(lecturer_id=user_id)
+        student_ids = Enrollment.objects.filter(course__in=my_courses).values_list('user_id', flat=True).distinct()
+        contacts = User.objects.filter(user_id__in=student_ids)
+    
+    return contacts
+
+def private_chat_index(request):
+    user_id = request.session.get('user_id')
+    role_name = request.session.get('role_name')
+    if not user_id: return redirect('login_view')
+
+    # Cari kontak pertama untuk redirect
+    contacts = get_contact_list(user_id, role_name)
+    
+    if contacts.exists():
+        return redirect('private_chat_room', other_user_id=contacts.first().user_id)
+    
+    # Jika tidak ada kontak, render halaman kosong
+    return render(request, 'chat/private.html', {'contacts': [], 'current_chat_user': None})
+
+def private_chat_room(request, other_user_id):
+    user_id = request.session.get('user_id')
+    role_name = request.session.get('role_name')
+    if not user_id: return redirect('login_view')
+
+    current_chat_user = get_object_or_404(User, user_id=other_user_id)
+    contacts = get_contact_list(user_id, role_name)
+
+    context = {
+        'contacts': contacts,
+        'current_chat_user': current_chat_user,
+        'user_id': user_id,
+        'user_name': request.session.get('name')
+    }
+    return render(request, 'chat/private.html', context)
+
+def send_private_msg_ajax(request):
+    if request.method == 'POST':
+        sender_id = request.session.get('user_id')
+        receiver_id = request.POST.get('receiver_id')
+        message_text = request.POST.get('message')
+
+        if message_text and receiver_id and sender_id:
+            try:
+                sender = User.objects.get(user_id=sender_id)
+                receiver = User.objects.get(user_id=receiver_id)
+                
+                Message.objects.create(
+                    sender=sender,
+                    receiver=receiver,
+                    message_text=message_text
+                )
+                return JsonResponse({'status': 'success'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error'})
+
+def get_private_msg_ajax(request, other_user_id):
+    user_id = request.session.get('user_id')
+    if not user_id: return JsonResponse({'status': 'error'}, status=403)
+
+    last_id = request.GET.get('last_id', 0)
+    
+    # Query pesan: (Saya pengirim DAN Dia penerima) ATAU (Dia pengirim DAN Saya penerima)
+    # DAN ID pesan > last_id (untuk polling efisien)
+    messages = Message.objects.filter(
+        (Q(sender_id=user_id) & Q(receiver_id=other_user_id)) |
+        (Q(sender_id=other_user_id) & Q(receiver_id=user_id))
+    ).filter(message_id__gt=last_id).order_by('sent_at')
+
+    data = []
+    for msg in messages:
+        time_str = msg.sent_at.strftime("%H:%M")
+        is_me = msg.sender.user_id == user_id
+        
+        data.append({
+            'id': msg.message_id,
+            'text': msg.message_text,
+            'time': time_str,
+            'is_me': is_me,
+            'avatar': msg.sender.name[0]
+        })
+    
+    return JsonResponse({
+        'status': 'success',
+        'messages': data
+    })
