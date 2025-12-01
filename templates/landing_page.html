@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khacademy | Future of Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 min-h-screen flex flex-col">
+
+    <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-black text-white p-2 rounded-lg">
+                    <i data-feather="book-open" class="w-6 h-6"></i>
+                </div>
+                <span class="text-2xl font-bold tracking-tight">Khacademy</span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+                <a href="#" class="hover:text-black transition-colors">Home</a>
+                <a href="#features" class="hover:text-black transition-colors">Features</a>
+                <a href="#testimonials" class="hover:text-black transition-colors">Testimonials</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="{% url 'login_view' %}" class="text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors">Log In</a>
+                <a href="{% url 'signup_view' %}" class="bg-black text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-20 px-6 grid-bg">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <div class="space-y-8 animate-fade-in-up">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-gray-200">
+                    <span class="w-2 h-2 rounded-full bg-black animate-pulse"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-600">New Platform V2.0</span>
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-gray-900">
+                    Master Your <br>
+                    <span class="text-gray-500">Digital Skills</span>
+                </h1>
+                
+                <p class="text-lg text-gray-500 leading-relaxed max-w-lg">
+                    Platform pembelajaran terintegrasi untuk Dosen dan Mahasiswa. Kelola materi, kuis, dan tugas dalam satu ekosistem yang efisien dan elegan.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <a href="{% url 'signup_view' %}" class="flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-800 transition-all shadow-xl hover:-translate-y-1">
+                        Start Learning Now <i data-feather="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                    <a href="#features" class="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-gray-700 border border-gray-200 hover:bg-gray-50 transition-all">
+                        Learn More
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-4 pt-8 text-sm text-gray-500">
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white"></div>
+                        <div class="w-8 h-8 rounded-full bg-gray-300 border-2 border-white"></div>
+                        <div class="w-8 h-8 rounded-full bg-gray-400 border-2 border-white"></div>
+                    </div>
+                    <p><span class="font-bold text-black">1,000+</span> Mahasiswa Bergabung</p>
+                </div>
+            </div>
+
+            <div class="relative hidden lg:block">
+                <div class="relative w-full h-[500px] bg-gray-50 rounded-[3rem] border border-gray-200 p-8 shadow-2xl overflow-hidden flex flex-col justify-center items-center">
+                    
+                    <div class="absolute top-10 right-10 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 w-48 animate-bounce delay-700">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white"><i data-feather="activity" class="w-4 h-4"></i></div>
+                            <div>
+                                <div class="h-2 w-12 bg-gray-200 rounded mb-1"></div>
+                                <div class="h-2 w-8 bg-gray-100 rounded"></div>
+                            </div>
+                        </div>
+                        <div class="h-12 w-full bg-gray-50 rounded-lg"></div>
+                    </div>
+
+                    <div class="absolute bottom-20 left-10 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 w-56 animate-pulse">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-gray-400">Progress</span>
+                            <span class="text-xs font-bold text-black">85%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-black h-full w-[85%] rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-64 h-64 rounded-full border-[20px] border-gray-200/50 flex items-center justify-center relative">
+                        <div class="w-40 h-40 rounded-full bg-black flex items-center justify-center text-white shadow-2xl">
+                            <i data-feather="box" class="w-16 h-16"></i>
+                        </div>
+                        <div class="absolute w-full h-full animate-spin-slow">
+                            <div class="w-4 h-4 bg-gray-400 rounded-full absolute -top-2 left-1/2"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section id="features" class="py-20 bg-gray-50 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Everything you need to learn efficiently</h2>
+                <p class="text-gray-500">Fitur lengkap untuk mendukung proses belajar mengajar yang modern, cepat, dan terstruktur.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center mb-6">
+                        <i data-feather="layout" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Interactive Modules</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Materi pembelajaran disusun rapi dengan dukungan video, teks, dan quiz interaktif.</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-gray-100 text-black rounded-xl flex items-center justify-center mb-6">
+                        <i data-feather="check-square" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Quiz & Assignments</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Evaluasi pemahaman dengan kuis otomatis dan pengumpulan tugas yang mudah.</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-white border-2 border-black text-black rounded-xl flex items-center justify-center mb-6">
+                        <i data-feather="message-circle" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Live Discussion</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Forum diskusi real-time untuk tanya jawab antara dosen dan mahasiswa.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="py-24 bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 max-w-2xl mx-auto">
+                <span class="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2 block">Testimonials</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Trusted by Students & Lecturers</h2>
+                <p class="text-gray-500">Dengar apa kata mereka yang telah menggunakan Khacademy untuk meningkatkan produktivitas belajar.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-8 rounded-3xl relative">
+                    <i data-feather="message-square" class="w-8 h-8 text-gray-300 absolute top-8 right-8"></i>
+                    <p class="text-gray-700 italic mb-6 leading-relaxed">"Platform ini sangat membantu saya dalam mengelola materi kuliah. Tampilannya bersih dan mudah digunakan, membuat belajar jadi lebih fokus."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center font-bold text-gray-600">AS</div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">Andi Saputra</h4>
+                            <p class="text-xs text-gray-500">Mahasiswa Informatika</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-black text-white p-8 rounded-3xl relative shadow-2xl transform md:-translate-y-4">
+                    <i data-feather="star" class="w-8 h-8 text-yellow-500 absolute top-8 right-8 fill-current"></i>
+                    <p class="text-gray-300 italic mb-6 leading-relaxed">"Sebagai dosen, fitur manajemen tugas dan kuis otomatis sangat menghemat waktu. Saya bisa fokus pada interaksi dengan mahasiswa."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center font-bold">BS</div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Budi Santoso</h4>
+                            <p class="text-xs text-gray-400">Dosen Pemrograman</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-8 rounded-3xl relative">
+                    <i data-feather="message-square" class="w-8 h-8 text-gray-300 absolute top-8 right-8"></i>
+                    <p class="text-gray-700 italic mb-6 leading-relaxed">"Fitur diskusi kelasnya sangat real-time. Rasanya seperti chatting biasa tapi dalam konteks belajar. Sangat direkomendasikan!"</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center font-bold text-gray-600">SA</div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">Siti Aminah</h4>
+                            <p class="text-xs text-gray-500">Mahasiswa Desain</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-black text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-gray-800 rounded-full blur-[100px] opacity-30 -translate-y-1/2 translate-x-1/2"></div>
+        
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">Ready to transform your learning journey?</h2>
+            <p class="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">Bergabunglah dengan ribuan mahasiswa dan dosen lainnya. Mulai pengalaman belajar yang lebih baik hari ini.</p>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="{% url 'signup_view' %}" class="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-black bg-white rounded-full hover:bg-gray-200 transition-all hover:-translate-y-1 shadow-lg shadow-white/10">
+                    Get Started for Free
+                </a>
+                <a href="{% url 'login_view' %}" class="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white border border-gray-700 rounded-full hover:bg-gray-900 transition-all">
+                    Log In
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white border-t border-gray-200 py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <div class="bg-black text-white p-1.5 rounded">
+                    <i data-feather="book-open" class="w-4 h-4"></i>
+                </div>
+                <span class="font-bold text-lg">Khacademy</span>
+            </div>
+            <p class="text-sm text-gray-500">© 2025 Khacademy. All rights reserved.</p>
+            <div class="flex gap-6">
+                <a href="#" class="text-gray-400 hover:text-black transition-colors"><i data-feather="instagram" class="w-5 h-5"></i></a>
+                <a href="#" class="text-gray-400 hover:text-black transition-colors"><i data-feather="twitter" class="w-5 h-5"></i></a>
+                <a href="#" class="text-gray-400 hover:text-black transition-colors"><i data-feather="github" class="w-5 h-5"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        feather.replace();
+    </script>
+    <style>
+        .animate-spin-slow { animation: spin 10s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+    </style>
+</body>
+</html>

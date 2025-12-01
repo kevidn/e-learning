@@ -1,4 +1,5 @@
 from django.db import models
+import re
 
 # --- MODEL UTAMA (User, Role, Course) ---
 class Role(models.Model):
@@ -65,28 +66,14 @@ class ModuleContent(models.Model):
         if not self.video_url: 
             return ""
         
-        video_id = ""
+        # Regex untuk menangkap ID Youtube dari berbagai format (youtu.be, watch?v=, embed/, dll)
+        regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+        match = re.search(regex, self.video_url)
         
-        # Cek format standar: youtube.com/watch?v=ID
-        if "v=" in self.video_url:
-            try:
-                # Ambil string setelah 'v=' dan potong jika ada parameter lain (&)
-                video_id = self.video_url.split('v=')[1].split('&')[0]
-            except IndexError:
-                return self.video_url
-                
-        # Cek format pendek: youtu.be/ID
-        elif "youtu.be" in self.video_url:
-            try:
-                # Ambil bagian terakhir dari URL
-                video_id = self.video_url.split('/')[-1].split('?')[0]
-            except IndexError:
-                return self.video_url
-        
-        # Jika video_id ditemukan, return format embed yang benar
-        if video_id:
-            return f"https://www.youtube.com/embed/{video_id}"
+        if match:
+            return f"https://www.youtube.com/embed/{match.group(1)}"
             
+        # Jika bukan youtube, kembalikan apa adanya (mungkin link mp4 biasa)
         return self.video_url
 
 # --- PERUBAHAN DI SINI (Quiz & Question) ---

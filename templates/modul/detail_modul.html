@@ -1,331 +1,255 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ module.title }}{% endblock %}
+{% block title %}{{ module.title }} | Khacademy{% endblock %}
 
+{# --- SEMBUNYIKAN SIDEBAR UTAMA & HEADER DEFAULT --- #}
+{% block sidebar_menu %}{% endblock %}
 {% block header_title %}{% endblock %}
 {% block header_subtitle %}{% endblock %}
 {% block navbar_actions %}{% endblock %}
-{% block sidebar_menu %}{% endblock %}
 
 {% block content %}
 <style>
-    aside.w-64 { display: none !important; }
-    header { display: none !important; }
-    main { 
-        padding: 0 !important; 
-        width: 100%; 
-        background-color: #f3f4f6; 
-        height: 100vh; 
-        overflow-y: auto; 
-    }
-    .custom-scroll::-webkit-scrollbar { width: 6px; }
-    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    /* Paksa sembunyikan sidebar base */
+    aside.w-72 { display: none !important; }
+    main { padding: 0 !important; max-height: 100vh; overflow: hidden; }
     
-    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .learning-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        height: 100vh;
+        background-color: #0F1115;
+    }
+    
+    @media (max-width: 1024px) {
+        .learning-layout { grid-template-columns: 1fr; }
+        .sidebar-materi { display: none; } 
+    }
 </style>
 
-<div class="min-h-screen bg-gray-100 font-sans pb-20">
+<div class="learning-layout font-poppins text-gray-200">
 
-    <div class="bg-[#2a2b3d] text-white pt-6 pb-24 px-6 md:px-12 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-
-        <div class="max-w-7xl mx-auto flex justify-between items-center mb-8 relative z-10">
-            <a href="{% url 'mahasiswa_dashboard' %}" class="group flex items-center text-sm font-bold text-gray-300 hover:text-white transition-colors">
-                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-all border border-white/5">
-                    <i data-feather="arrow-left" class="w-5 h-5"></i>
+    {# --- KOLOM KIRI: DAFTAR MATERI --- #}
+    <div class="sidebar-materi bg-[#16181D] border-r border-white/5 flex flex-col h-full z-20 shadow-xl">
+        <div class="p-6 border-b border-white/5">
+            <a href="{% url 'my_learning' %}" class="flex items-center text-gray-400 hover:text-white transition-colors mb-6 group">
+                <div class="p-1.5 bg-[#252A33] rounded-lg border border-white/5 group-hover:bg-white group-hover:text-black transition-all mr-3">
+                    <i data-feather="arrow-left" class="w-4 h-4"></i>
                 </div>
-                <span>Kembali ke Dashboard</span>
+                <span class="text-xs font-bold uppercase tracking-widest">Kembali</span>
             </a>
-            <div class="flex items-center space-x-4">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-bold text-white leading-tight">{{ request.session.name }}</p>
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">Mahasiswa</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold shadow-lg border-2 border-white/10">
-                    {{ request.session.name|slice:":1" }}
-                </div>
+            
+            <h2 class="text-xl font-bold text-white leading-tight mb-1">{{ module.title }}</h2>
+            <p class="text-xs text-gray-500 font-medium">{{ contents.count }} Materi Pembelajaran</p>
+            
+            <div class="w-full bg-[#0F1115] rounded-full h-1.5 mt-4 overflow-hidden">
+                <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%" id="mini-progress-bar"></div>
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto relative z-10">
-            <div class="flex items-center space-x-2 text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">
-                <span class="bg-white/10 px-2 py-1 rounded text-indigo-200">Course</span>
-                <i data-feather="chevron-right" class="w-3 h-3"></i>
-                <span class="text-white">{{ module.course.course_name }}</span>
-            </div>
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-extrabold mb-3 leading-tight">{{ module.title }}</h1>
-                    <div class="flex items-center flex-wrap gap-4 text-sm text-gray-300">
-                        <div class="flex items-center bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                            <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold mr-2">
-                                {{ module.course.lecturer.name|slice:":1" }}
-                            </div>
-                            <span>{{ module.course.lecturer.name }}</span>
-                        </div>
-                        <span class="flex items-center"><i data-feather="book-open" class="w-4 h-4 mr-2 text-orange-400"></i> {{ contents.count }} Materi</span>
-                        <span class="flex items-center"><i data-feather="clipboard" class="w-4 h-4 mr-2 text-blue-400"></i> Tugas: {% if assignment %}Ada{% else %}Tidak ada{% endif %}</span>
-                    </div>
+        <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-1">
+            {% for content in contents %}
+            <button onclick="loadContent('{{ content.content_id }}', this)" 
+                    id="nav-item-{{ content.content_id }}"
+                    class="w-full text-left p-3.5 flex items-start space-x-3 rounded-xl transition-all border border-transparent group relative
+                {% if forloop.first %}bg-[#252A33] border-white/5 text-white active-item shadow-lg{% else %}hover:bg-white/5 text-gray-400 hover:text-gray-200{% endif %}">
+                
+                <div class="active-indicator absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full {% if not forloop.first %}hidden{% endif %}"></div>
+
+                <div class="flex-shrink-0 mt-0.5 ml-1">
+                    <i data-feather="{% if content.video_url %}play-circle{% else %}file-text{% endif %}" 
+                       class="w-4 h-4 icon-display {% if forloop.first %}text-indigo-400{% endif %}"></i>
                 </div>
-            </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-medium truncate leading-snug">{{ content.title }}</h4>
+                </div>
+            </button>
+            {% endfor %}
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 -mt-16 relative z-20">
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-gray-100">
-
-            <div class="w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-white flex-shrink-0">
-                <div class="p-5 border-b border-gray-100 bg-orange-50/50">
-                    <h3 class="font-bold text-orange-600 text-sm uppercase tracking-wider mb-1">Daftar Materi</h3>
-                    <p class="text-xs text-gray-500 mt-1 font-medium">{{ contents.count }} Halaman Pembelajaran</p>
+    {# --- KOLOM KANAN: KONTEN UTAMA --- #}
+    <div class="flex-1 flex flex-col h-full bg-[#0F1115] relative overflow-hidden">
+        
+        <div class="absolute top-0 left-0 right-0 p-6 flex justify-end z-30 pointer-events-none">
+            <div class="pointer-events-auto bg-[#1A1D24]/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 flex items-center gap-3 shadow-xl">
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Pengajar</p>
+                    <p class="text-xs font-bold text-white">{{ module.course.lecturer.name }}</p>
                 </div>
-                <div class="flex-1 overflow-y-auto custom-scroll">
-                    {% for content in contents %}
-                    <button onclick="loadContent('{{ content.content_id }}', this)" id="nav-item-{{ content.content_id }}"
-                            class="w-full text-left p-4 flex items-start space-x-3 hover:bg-gray-50 transition-all border-b border-gray-50 relative group
-                        {% if forloop.first %}bg-orange-50 border-l-4 border-l-orange-500 active-item{% else %}border-l-4 border-l-transparent{% endif %}">
-                        <div class="flex-shrink-0 mt-0.5">
-                            {% if content.video_url %}
-                            <div class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 flex items-center justify-center group-hover:text-orange-500 group-hover:border-orange-300 transition-colors shadow-sm">
-                                <i data-feather="play" class="w-3 h-3 ml-0.5"></i>
-                            </div>
-                            {% else %}
-                            <div class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 flex items-center justify-center group-hover:text-blue-500 group-hover:border-blue-300 transition-colors shadow-sm">
-                                <i data-feather="file-text" class="w-3 h-3"></i>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="text-sm font-bold text-gray-700 group-hover:text-gray-900 leading-snug">{{ content.title }}</h4>
-                            <p class="text-[10px] text-gray-400 mt-1 flex items-center">
-                                <i data-feather="clock" class="w-3 h-3 mr-1"></i> Pelajari
-                            </p>
-                        </div>
-                    </button>
-                    {% empty %}
-                    <div class="p-8 text-center text-gray-400 text-sm">Belum ada materi.</div>
-                    {% endfor %}
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                    {{ module.course.lecturer.name|slice:":1" }}
                 </div>
             </div>
+        </div>
 
-            <div class="flex-1 flex flex-col bg-white relative min-w-0">
-                
-                <div id="loading-overlay" class="hidden absolute inset-0 bg-white z-30 flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                    <p class="text-gray-500 font-medium">Memuat materi...</p>
-                </div>
+        <div class="flex-1 overflow-y-auto custom-scroll p-8 lg:p-12 pb-32 relative z-10" id="main-scroll-area">
+            
+            <div id="loading-overlay" class="hidden absolute inset-0 bg-[#0F1115] z-50 flex flex-col items-center justify-center min-h-[500px]">
+                <div class="w-10 h-10 border-4 border-white/5 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+                <p class="text-gray-500 text-sm font-medium animate-pulse">Memuat materi...</p>
+            </div>
 
-                <div class="flex-1 overflow-y-auto custom-scroll p-6 md:p-10 relative" id="main-scroll-area">
-                    
-                    <div id="dynamic-lesson-content">
-                        {% with first=contents|first %}
-                        {% if first %}
-                        <div class="animate-fade-in">
-                            <div class="mb-6 pb-6 border-b border-gray-100 flex justify-between items-center">
-                                <div>
-                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Topik Bahasan</span>
-                                    <h2 class="text-2xl font-bold text-gray-800 mt-1">{{ first.title }}</h2>
-                                </div>
-                            </div>
-
-                            <div id="media-placeholder" class="mb-8">
-                                {% if first.video_url %}
-                                <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-lg border border-gray-100 group">
-                                    <iframe class="w-full h-full" src="{{ first.get_embed_url }}" title="{{ first.title }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-                                </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="prose prose-orange max-w-none text-gray-600 leading-relaxed">
-                                {{ first.text_content|linebreaks }}
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="h-full flex flex-col items-center justify-center text-center py-20">
-                            <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-state-2130362-1800926.png" class="w-64 opacity-50 mb-4" alt="Empty">
-                            <h3 class="text-xl font-bold text-gray-400">Belum ada materi yang dipilih</h3>
-                        </div>
-                        {% endif %}
-                        {% endwith %}
+            <div id="dynamic-lesson-content" class="max-w-4xl mx-auto">
+                {% with first=contents|first %}
+                {% if first %}
+                <div class="animate-fade-in relative z-20"> <div class="mb-10 pb-6 border-b border-white/5">
+                        <span class="inline-block px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-widest border border-indigo-500/20 mb-4">
+                            Topik Bahasan
+                        </span>
+                        <h1 class="text-4xl font-black text-white leading-tight">{{ first.title }}</h1>
                     </div>
 
-                    {% if assignment %}
-                    <div class="mt-16 pt-10 border-t-2 border-dashed border-gray-200">
+                    <div id="media-placeholder" class="mb-12 relative z-20">
+                        {% if first.video_url %}
+                        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group ring-1 ring-white/5 z-20">
+                            <iframe class="w-full h-full absolute inset-0" 
+                                    src="{{ first.get_embed_url }}" 
+                                    title="{{ first.title }}" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    referrerpolicy="strict-origin-when-cross-origin" 
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed relative z-20">
+                        {{ first.text_content|linebreaks }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center h-[60vh] opacity-40">
+                    <i data-feather="book-open" class="w-16 h-16 text-gray-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-400">Pilih materi untuk memulai</h3>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            {# TUGAS SECTION #}
+            {% if assignment %}
+            <div class="mt-24 max-w-4xl mx-auto relative z-20">
+                <div class="bg-[#16181D] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                    <div class="relative z-10">
                         <div class="flex items-center mb-6">
-                            <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mr-4">
-                                <i data-feather="clipboard" class="w-5 h-5"></i>
+                            <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 mr-4">
+                                <i data-feather="clipboard" class="w-6 h-6"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-gray-800">Tugas Modul</h3>
-                                <p class="text-sm text-gray-500">Kerjakan tugas ini untuk menyelesaikan modul</p>
+                                <h3 class="text-xl font-bold text-white">Tugas Modul</h3>
+                                <p class="text-sm text-gray-500">Selesaikan tugas ini untuk menuntaskan modul</p>
                             </div>
                         </div>
 
-                        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
-                            <h4 class="font-bold text-lg text-gray-800 mb-2">{{ assignment.title }}</h4>
-                            <p class="text-gray-600 mb-4 text-sm leading-relaxed">{{ assignment.description|linebreaks }}</p>
-                            <div class="flex items-center text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg w-fit">
-                                <i data-feather="clock" class="w-3 h-3 mr-2"></i>
-                                Deadline: {{ assignment.deadline|date:"d M Y, H:i" }}
+                        <div class="bg-[#0F1115] rounded-2xl p-6 border border-white/5 mb-8">
+                            <h4 class="font-bold text-white text-lg mb-2">{{ assignment.title }}</h4>
+                            <p class="text-gray-400 text-sm leading-relaxed mb-4">{{ assignment.description|linebreaks }}</p>
+                            <div class="flex items-center gap-2">
+                                <i data-feather="clock" class="w-3 h-3 text-red-400"></i>
+                                <span class="text-xs font-bold text-red-400 uppercase tracking-wide">Deadline: {{ assignment.deadline|date:"d M Y, H:i" }}</span>
                             </div>
                         </div>
 
                         {% if submission %}
-                            <div class="bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start">
-                                <div class="flex-1">
-                                    <div class="flex items-center text-green-700 font-bold mb-2">
-                                        <i data-feather="check-circle" class="w-5 h-5 mr-2"></i>
-                                        Status: Sudah Dikumpulkan
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="flex-1 bg-green-500/5 border border-green-500/20 rounded-2xl p-6">
+                                    <div class="flex items-center text-green-400 font-bold mb-2">
+                                        <i data-feather="check-circle" class="w-5 h-5 mr-2"></i> Status: Terkirim
                                     </div>
-                                    <p class="text-xs text-gray-500 mb-4">Dikirim pada: {{ submission.submitted_at|date:"d M Y, H:i" }}</p>
+                                    <p class="text-xs text-gray-500 mb-4 font-mono">Pada: {{ submission.submitted_at|date:"d M Y, H:i" }}</p>
                                     
                                     {% if submission.answer_text %}
-                                    <div class="bg-white p-3 rounded-xl border border-green-100 text-sm text-gray-600 mb-3">
-                                        <span class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Jawaban Teks:</span>
-                                        {{ submission.answer_text }}
+                                    <div class="p-4 bg-[#0F1115] rounded-xl border border-white/5 text-sm text-gray-300 italic mb-3">
+                                        "{{ submission.answer_text }}"
                                     </div>
                                     {% endif %}
-
-                                    {% if submission.file_url %}
-                                    <a href="{{ submission.file_url }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50 hover:text-indigo-600 transition-all">
-                                        <i data-feather="file" class="w-4 h-4 mr-2"></i> Download File Jawaban
-                                    </a>
-                                    {% endif %}
-
-                                    {% if grade.feedback %}
-                                    <div class="mt-4 bg-white/80 p-4 rounded-xl border border-green-200 shadow-sm">
-                                        <h5 class="text-xs font-bold text-green-700 uppercase mb-2 flex items-center">
-                                            <i data-feather="message-circle" class="w-4 h-4 mr-2"></i> Review & Feedback Dosen
-                                        </h5>
-                                        <div class="text-sm text-gray-700 bg-green-50 p-3 rounded-lg italic border border-green-100">
-                                            "{{ grade.feedback|linebreaksbr }}"
-                                        </div>
                                     </div>
-                                    {% endif %}
                                 </div>
-                                
-                                {% if grade %}
-                                <div class="bg-white p-4 rounded-xl border border-gray-200 text-center min-w-[120px]">
-                                    <span class="block text-xs font-bold text-gray-400 uppercase">Nilai Anda</span>
-                                    <span class="block text-4xl font-extrabold text-indigo-600 mt-1">{{ grade.score|floatformat:0 }}</span>
-                                    <span class="block text-[10px] text-gray-400 font-bold mt-1">/ 100</span>
-                                </div>
-                                {% else %}
-                                <div class="bg-white/50 p-4 rounded-xl border border-dashed border-gray-300 text-center min-w-[120px]">
-                                    <span class="block text-xs font-bold text-gray-400 uppercase">Nilai</span>
-                                    <span class="block text-sm font-bold text-gray-500 mt-2">Belum Dinilai</span>
-                                </div>
-                                {% endif %}
-                            </div>
-
                         {% else %}
-                            <form method="POST" enctype="multipart/form-data" class="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                            <form method="POST" enctype="multipart/form-data" class="space-y-6">
                                 {% csrf_token %}
-                                <h4 class="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Form Pengumpulan</h4>
-                                
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold text-gray-600 mb-2">Jawaban Teks</label>
-                                    <textarea name="answer_text" rows="3" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none transition-all" placeholder="Tulis jawaban singkat di sini..."></textarea>
-                                </div>
-                                
-                                <div class="mb-6">
-                                    <label class="block text-sm font-bold text-gray-600 mb-2">Upload File</label>
-                                    <input type="file" name="assignment_file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-indigo-700 hover:file:bg-indigo-50 cursor-pointer border border-gray-300 rounded-xl bg-white">
-                                </div>
-
                                 <div class="flex justify-end">
-                                    <button type="submit" class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center">
-                                        <i data-feather="send" class="w-4 h-4 mr-2"></i> Kumpulkan Tugas
+                                    <button type="submit" class="px-8 py-3 bg-white text-black font-bold rounded-xl shadow-lg hover:bg-gray-200 transition-all flex items-center">
+                                        Kirim Jawaban <i data-feather="send" class="w-4 h-4 ml-2"></i>
                                     </button>
                                 </div>
                             </form>
                         {% endif %}
                     </div>
-                    {% endif %}
-                    
-                    <div class="h-10"></div>
                 </div>
+            </div>
+            {% endif %}
+            
+            <div class="h-32"></div>
+        </div>
 
-                <div class="p-4 border-t border-gray-100 bg-gray-50 sticky bottom-0 z-20 backdrop-blur-md bg-gray-50/90">
-    
-                    <form id="quick-chat-form" onsubmit="return false;" class="relative flex flex-col gap-2">
-                        {% csrf_token %}
-                        
-                        <input type="hidden" name="course_id" value="{{ module.course.course_id }}">
-                        <input type="hidden" id="lecturer-id" value="{{ module.course.lecturer.user_id }}">
-                        
-                        <div class="flex items-center gap-2">
-                            <div class="relative">
-                                <select id="chat-destination" class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-3 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 cursor-pointer shadow-sm transition-all hover:border-indigo-300">
-                                    <option value="public">👥 Kelas</option>
-                                    {% if module.course.lecturer %}
-                                    <option value="private">🔒 Dosen</option>
-                                    {% endif %}
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                    <i data-feather="chevron-down" class="w-3 h-3"></i>
-                                </div>
-                            </div>
-
-                            <div class="relative flex-1">
-                                <input type="text" id="quick-message-input" name="message" 
-                                    placeholder="Tanya ke kelas..." 
-                                    class="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all text-sm shadow-sm"
-                                    autocomplete="off" required>
-                                
-                                <button type="submit" id="btn-quick-send" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95">
-                                    <i data-feather="send" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+        <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0F1115] via-[#0F1115] to-transparent pointer-events-none z-40">
+            <div class="pointer-events-auto max-w-4xl mx-auto bg-[#1A1D24] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
+                <form id="quick-chat-form" onsubmit="return false;" class="flex-1 flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="course_id" value="{{ module.course.course_id }}">
+                    <input type="hidden" id="lecturer-id" value="{{ module.course.lecturer.user_id }}">
                     
-                    <div class="flex justify-between items-center mt-2 px-1">
-                        <p class="text-[10px] text-gray-400" id="chat-hint">Pesan akan terlihat oleh semua anggota kelas.</p>
-                        <a href="{% url 'chat_room' module.course.course_id %}" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 hover:underline tracking-wide flex items-center">
-                            BUKA FORUM LENGKAP <i data-feather="external-link" class="w-3 h-3 ml-1"></i>
-                        </a>
+                    <div class="relative">
+                        <select id="chat-destination" class="appearance-none bg-[#0F1115] text-gray-400 text-xs font-bold py-3 pl-4 pr-8 rounded-xl focus:outline-none cursor-pointer hover:text-white transition-colors border border-transparent hover:border-white/5 h-full">
+                            <option value="public">@ Kelas</option>
+                            {% if module.course.lecturer %}
+                            <option value="private">@ Dosen</option>
+                            {% endif %}
+                        </select>
                     </div>
-                </div>
 
+                    <input type="text" id="quick-message-input" name="message" 
+                        placeholder="Tanya sesuatu ke forum..." 
+                        class="flex-1 bg-transparent border-none text-gray-200 text-sm focus:ring-0 placeholder-gray-600 px-2"
+                        autocomplete="off" required>
+                    
+                    <button type="submit" id="btn-quick-send" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all shadow-lg active:scale-95">
+                        <i data-feather="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
             </div>
         </div>
+
     </div>
 </div>
+
+<style>
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+    
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 
 {% block extra_js %}
 <script>
     feather.replace();
-
-    // ===========================
-    // 1. FUNGSI LOAD MATERI (AJAX)
-    // ===========================
-    // URL untuk submit quiz
     const urlSubmitQuiz = "{% url 'submit_quiz_ajax' %}";
 
     async function loadContent(contentId, btnElement) {
-        // ... (Kode Reset Style Tombol Sidebar TETAP SAMA seperti sebelumnya) ...
+        // Reset Styles Sidebar
         document.querySelectorAll('button[id^="nav-item-"]').forEach(btn => {
-            btn.classList.remove('bg-orange-50', 'border-l-orange-500', 'active-item');
-            btn.classList.add('border-l-transparent');
-            const iconBox = btn.querySelector('.w-8');
-            if(iconBox) {
-                iconBox.classList.remove('text-orange-500', 'border-orange-300');
-                iconBox.classList.add('text-gray-400', 'border-gray-200');
-            }
+            btn.classList.remove('bg-[#252A33]', 'border-white/5', 'text-white', 'active-item', 'shadow-lg');
+            btn.classList.add('text-gray-400', 'hover:bg-white/5', 'hover:text-gray-200');
+            btn.querySelector('.active-indicator').classList.add('hidden');
+            const icon = btn.querySelector('.icon-display');
+            if(icon) icon.classList.remove('text-indigo-400');
         });
 
         if(btnElement) {
-            btnElement.classList.remove('border-l-transparent');
-            btnElement.classList.add('bg-orange-50', 'border-l-4', 'border-l-orange-500', 'active-item');
-            const iconBox = btnElement.querySelector('.w-8');
-            if(iconBox) {
-                iconBox.classList.remove('text-gray-400', 'border-gray-200');
-                iconBox.classList.add('text-orange-500', 'border-orange-300');
-            }
+            btnElement.classList.remove('text-gray-400', 'hover:bg-white/5', 'hover:text-gray-200');
+            btnElement.classList.add('bg-[#252A33]', 'border-white/5', 'text-white', 'active-item', 'shadow-lg');
+            btnElement.querySelector('.active-indicator').classList.remove('hidden');
+            const icon = btnElement.querySelector('.icon-display');
+            if(icon) icon.classList.add('text-indigo-400');
         }
 
         const container = document.getElementById('dynamic-lesson-content');
@@ -339,156 +263,128 @@
             if (!response.ok) throw new Error('Gagal ambil data');
             const data = await response.json();
 
-            // 1. Render Media & Teks
-            let htmlContent = '';
-            
-            // Header Materi
-            htmlContent += `
-                <div class="mb-6 pb-6 border-b border-gray-100 flex justify-between items-center">
-                    <div>
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Topik Bahasan</span>
-                        <h2 class="text-2xl font-bold text-gray-800 mt-1">${data.title}</h2>
-                    </div>
-                </div>`;
+            let htmlContent = `
+                <div class="animate-fade-in relative z-20">
+                    <div class="mb-10 pb-6 border-b border-white/5">
+                        <span class="inline-block px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-widest border border-indigo-500/20 mb-4">
+                            Topik Bahasan
+                        </span>
+                        <h1 class="text-4xl font-black text-white leading-tight">${data.title}</h1>
+                    </div>`;
 
             if (data.video_url) {
-                htmlContent += `<div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-lg border border-gray-100 mb-8"><iframe class="w-full h-full" src="${data.video_url}" frameborder="0" allowfullscreen></iframe></div>`;
+                htmlContent += `
+                    <div id="media-placeholder" class="mb-12 relative z-20">
+                        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group ring-1 ring-white/5">
+                            <iframe class="w-full h-full absolute inset-0" src="${data.video_url}" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>`;
             }
             
             if (data.text_content) {
-                htmlContent += `<div class="prose prose-orange max-w-none text-gray-600 leading-relaxed mb-10">${data.text_content.replace(/\n/g, '<br>')}</div>`;
+                htmlContent += `<div class="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed relative z-20">${data.text_content.replace(/\n/g, '<br>')}</div>`;
             }
 
-            // 2. Render QUIZ (JIKA ADA)
             if (data.quiz) {
                 htmlContent += renderQuizSection(data.quiz);
             }
 
-            container.innerHTML = `<div class="animate-fade-in">${htmlContent}</div>`;
+            htmlContent += `</div>`;
+            container.innerHTML = htmlContent;
             feather.replace();
             scrollArea.scrollTop = 0;
 
         } catch (e) {
             console.error(e);
-            container.innerHTML = `<div class="text-center text-red-500 py-10">Gagal memuat materi.</div>`;
+            container.innerHTML = `<div class="text-center text-red-400 py-20 bg-[#16181D] rounded-3xl border border-dashed border-white/10">Gagal memuat materi.</div>`;
         } finally {
             loader.classList.add('hidden');
         }
     }
 
-    // Helper: Render Tampilan Quiz
     function renderQuizSection(quiz) {
-        let html = `<div class="mt-8 pt-8 border-t-2 border-dashed border-gray-200">`;
-        
+        let html = `<div class="mt-20 pt-10 border-t border-dashed border-white/10 relative z-20">`;
         html += `
-            <div class="flex items-center mb-4">
-                <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mr-4">
-                    <i data-feather="help-circle" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-gray-800">Kuis: ${quiz.title}</h3>
-                    <p class="text-sm text-gray-500">${quiz.description || 'Kerjakan kuis ini untuk menguji pemahaman Anda.'}</p>
-                </div>
-            </div>`;
+            <div class="bg-[#16181D] border border-white/5 rounded-3xl p-8 relative overflow-hidden">
+                <div class="flex items-center mb-6 relative z-10">
+                    <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 mr-4">
+                        <i data-feather="help-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Kuis: ${quiz.title}</h3>
+                        <p class="text-sm text-gray-500">${quiz.description || 'Uji pemahaman Anda.'}</p>
+                    </div>
+                </div>`;
 
         if (quiz.is_completed) {
-            // Tampilan SUDAH Dikerjakan (Nilai)
-            let scoreColor = quiz.score >= 70 ? 'text-green-600 bg-green-50 border-green-200' : 'text-orange-600 bg-orange-50 border-orange-200';
-            
+            let scoreColor = quiz.score >= 70 ? 'text-green-400 border-green-500/20 bg-green-500/5' : 'text-orange-400 border-orange-500/20 bg-orange-500/5';
             html += `
-                <div class="p-6 rounded-2xl border ${scoreColor} text-center">
-                    <p class="text-sm font-bold uppercase tracking-wider opacity-70 mb-1">Nilai Anda</p>
-                    <span class="text-5xl font-extrabold">${Math.round(quiz.score)}</span>
+                <div class="p-8 rounded-2xl border ${scoreColor} text-center relative z-10">
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-70 mb-2">Nilai Anda</p>
+                    <span class="text-7xl font-black tracking-tighter">${Math.round(quiz.score)}</span>
                     <span class="text-xl font-bold opacity-60">/ 100</span>
-                    <p class="mt-4 text-sm font-medium opacity-80">Anda sudah mengerjakan kuis ini.</p>
-                </div>
-            `;
+                </div>`;
         } else {
-            // Tampilan FORM Soal (Belum Dikerjakan)
-            html += `<form id="quiz-submission-form" onsubmit="submitQuiz(event, '${quiz.id}')" class="space-y-6">`;
-            
+            html += `<form id="quiz-submission-form" onsubmit="submitQuiz(event, '${quiz.id}')" class="space-y-6 relative z-10">`;
             quiz.questions.forEach((q, index) => {
                 html += `
-                    <div class="bg-white border border-gray-200 p-5 rounded-xl shadow-sm">
-                        <p class="font-bold text-gray-800 mb-3 flex gap-2">
-                            <span class="bg-gray-100 text-gray-500 px-2 rounded text-sm flex items-center justify-center h-6">${index + 1}</span>
+                    <div class="bg-[#0F1115] border border-white/5 p-6 rounded-2xl shadow-inner">
+                        <p class="font-bold text-gray-200 mb-4 flex gap-4 text-lg items-start">
+                            <span class="bg-[#252A33] text-gray-400 w-8 h-8 rounded-lg text-sm flex items-center justify-center font-mono border border-white/5 flex-shrink-0">${index + 1}</span>
                             ${q.text}
                         </p>
-                        <div class="space-y-2 pl-2">
-                `;
-                
+                        <div class="space-y-3 pl-12">`;
                 q.options.forEach(opt => {
-                    if(opt.val) { // Hanya render jika opsi tidak kosong
+                    if(opt.val) {
                         html += `
-                            <label class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-purple-50 hover:border-purple-200 cursor-pointer transition-all group">
-                                <input type="radio" name="answers[${q.id}]" value="${opt.key}" required class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300">
-                                <span class="text-sm text-gray-600 group-hover:text-purple-700">${opt.val}</span>
-                            </label>
-                        `;
+                            <label class="flex items-center space-x-4 p-4 rounded-xl border border-white/5 bg-[#1A1D24] hover:bg-purple-500/10 hover:border-purple-500/30 cursor-pointer transition-all group">
+                                <input type="radio" name="answers[${q.id}]" value="${opt.key}" required class="w-5 h-5 text-purple-600 focus:ring-purple-500 bg-[#0F1115] border-gray-600">
+                                <span class="text-sm text-gray-400 group-hover:text-purple-300 transition-colors font-medium">${opt.val}</span>
+                            </label>`;
                     }
                 });
-
                 html += `</div></div>`;
             });
-
             html += `
-                <div class="flex justify-end pt-4">
-                    <button type="submit" id="btn-submit-quiz" class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-1">
+                <div class="flex justify-end pt-6">
+                    <button type="submit" id="btn-submit-quiz" class="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all transform hover:-translate-y-1">
                         Kirim Jawaban
                     </button>
                 </div>
             </form>`;
         }
-
-        html += `</div>`;
+        html += `</div></div>`;
         return html;
     }
 
-    // Fungsi Submit Quiz via AJAX
     async function submitQuiz(event, quizId) {
         event.preventDefault();
         const form = event.target;
         const btn = document.getElementById('btn-submit-quiz');
         const originalText = btn.innerText;
-
-        // UI Loading
-        btn.disabled = true;
-        btn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div> Memproses...`;
+        btn.disabled = true; btn.innerText = `Memproses...`;
 
         const formData = new FormData(form);
         formData.append('quiz_id', quizId);
 
         try {
             const response = await fetch(urlSubmitQuiz, {
-                method: 'POST',
-                body: formData,
-                headers: { 
-                    'X-Requested-With': 'XMLHttpRequest',
-                    // Pastikan CSRF Token terambil
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value 
-                }
+                method: 'POST', body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': '{{ csrf_token }}' }
             });
             const data = await response.json();
-
             if (data.status === 'success') {
-                showToast(`Kuis selesai! Nilai Anda: ${data.score}`, 'success');
-                // Reload konten ini untuk menampilkan nilai (bukan form lagi)
-                // Kita ambil ID konten dari tombol navigasi yang sedang aktif
                 const activeBtn = document.querySelector('.active-item');
                 if(activeBtn) {
                     const contentId = activeBtn.id.replace('nav-item-', '');
                     loadContent(contentId, activeBtn);
                 }
             } else {
-                showToast('Gagal: ' + data.message, 'error');
-                btn.disabled = false;
-                btn.innerText = originalText;
+                alert('Gagal: ' + data.message);
+                btn.disabled = false; btn.innerText = originalText;
             }
         } catch (e) {
-            console.error(e);
-            showToast('Terjadi kesalahan koneksi.', 'error');
-            btn.disabled = false;
-            btn.innerText = originalText;
+            console.error(e); btn.disabled = false; btn.innerText = originalText;
         }
     }
     

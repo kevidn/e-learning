@@ -3,7 +3,8 @@ from . import views
 
 urlpatterns = [
     # Auth
-    path('', views.login_view, name='login_view'),
+    path('', views.landing_page, name='landing_page'),
+    path('login/', views.login_view, name='login_view'),
     path('signup/', views.signup_view, name='signup_view'),
     path('logout/', views.logout_view, name='logout_view'),
 
@@ -65,4 +66,9 @@ urlpatterns = [
     # Grades
     path('ajax/get-grades/<str:type>/<int:item_id>/', views.get_grades_data, name='get_grades_data'),
     path('ajax/update-grade/', views.update_grade_ajax, name='update_grade_ajax'),
+
+    path('dashboard/dosen/course/tambah/', views.tambah_course, name='tambah_course'),
+    path('dashboard/dosen/course/edit/<int:course_id>/', views.edit_course, name='edit_course'),
+
+    path('api/notifications/', views.get_notifications_ajax, name='get_notifications_ajax'),
 ]
