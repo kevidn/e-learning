@@ -1,0 +1,56 @@
+<div class="space-y-6">
+    <div>
+        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Menu Utama</p>
+        <div class="space-y-1">
+            {# 1. DASHBOARD #}
+            <a href="{% url 'mahasiswa_dashboard' %}" class="group flex items-center space-x-3 px-4 py-3.5 rounded-xl {% if request.resolver_match.url_name == 'mahasiswa_dashboard' %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if request.resolver_match.url_name == 'mahasiswa_dashboard' %}
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {% endif %}
+                <i data-feather="grid" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Dashboard</span>
+            </a>
+
+            {# 2. MY LEARNING #}
+            <a href="{% url 'my_learning' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if request.resolver_match.url_name == 'my_learning' or 'modul' in request.path %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if request.resolver_match.url_name == 'my_learning' or 'modul' in request.path %}
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {% endif %}
+                <i data-feather="book-open" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">My Learning</span>
+            </a>
+
+            {# 3. DISKUSI #}
+            <a href="{% url 'chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if 'chat' in request.path %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if 'chat' in request.path %}
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {% endif %}
+                <i data-feather="message-circle" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Diskusi Kelas</span>
+            </a>
+        </div>
+    </div>
+    
+    <div>
+        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Personal</p>
+        <div class="space-y-1">
+            {# 4. PESAN PRIBADI #}
+            <a href="{% url 'private_chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if 'messages' in request.path %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if 'messages' in request.path %}
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {% endif %}
+                <i data-feather="mail" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Pesan Pribadi</span>
+            </a>
+            
+            {# 5. PROFILE #}
+            <a href="{% url 'profile_view' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if request.resolver_match.url_name == 'profile_view' %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if request.resolver_match.url_name == 'profile_view' %}
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {% endif %}
+                <i data-feather="user" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Profile</span>
+            </a>
+        </div>
+    </div>
+</div>

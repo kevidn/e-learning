@@ -1,290 +1,421 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Khacademy - Dashboard Mahasiswa{% endblock %}
-
-{# We hide the default header from base.html to build the custom one inside the grid #}
+{% block title %}Dashboard Mahasiswa | Modern Dark{% endblock %}
 {% block header_title %}{% endblock %}
 {% block header_subtitle %}{% endblock %}
 {% block navbar_actions %}{% endblock %}
 
-{# --- 1. LEFT SIDEBAR REPLACEMENT --- #}
+{# --- OVERRIDE STYLE SIDEBAR BAWAAN AGAR SESUAI TEMA GELAP --- #}
 {% block sidebar_menu %}
-<div class="flex flex-col h-full">
-    <div class="space-y-1 px-2">
-        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-2">Menu Utama</p>
+<div class="space-y-6">
+    <div>
+        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Menu Utama</p>
         
-        {# 1. OVERVIEW (Aktif di halaman Dashboard) #}
-        <a href="{% url 'mahasiswa_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-orange-50 text-orange-600 font-bold relative transition-all">
-            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-orange-500 rounded-r-full"></div>
-            <i data-feather="grid" class="w-5 h-5"></i>
-            <span>Overview</span>
-        </a>
+        <div class="space-y-1">
+            {# 1. OVERVIEW (Aktif) #}
+            <a href="{% url 'mahasiswa_dashboard' %}" class="group flex items-center space-x-3 px-4 py-3.5 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 transition-all relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <i data-feather="grid" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Overview</span>
+            </a>
 
-        <a href="{% url 'my_learning' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="book-open" class="w-5 h-5"></i>
-            <span>My Learning</span>
-        </a>
+            {# 2. MY LEARNING #}
+            <a href="{% url 'my_learning' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-feather="book-open" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
+                <span>My Learning</span>
+            </a>
 
-        <a href="{% url 'chat_index' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all mt-1">
-            <i data-feather="message-circle" class="w-5 h-5"></i>
-        <span>Diskusi Kelas</span>
-
-        <a href="{% url 'private_chat_index' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all mt-1">
-            <i data-feather="mail" class="w-5 h-5"></i>
-            <span>Pesan Pribadi</span>
-        </a>
-
-        <a href="{% url 'profile_view' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all">
-            <i data-feather="user" class="w-5 h-5"></i>
-            <span>Profile</span>
-        </a>
-    </a>
+            {# 3. DISKUSI #}
+            <a href="{% url 'chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-feather="message-circle" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
+                <span>Diskusi Kelas</span>
+            </a>
+        </div>
     </div>
 
+    <div>
+        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Personal</p>
+        
+        <div class="space-y-1">
+            {# 4. PESAN #}
+            <a href="{% url 'private_chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-feather="mail" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
+                <span>Pesan Pribadi</span>
+            </a>
+
+            {# 5. PROFILE #}
+            <a href="{% url 'profile_view' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <i data-feather="user" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
+                <span>Profile</span>
+            </a>
+        </div>
     </div>
+</div>
 {% endblock %}
 
 
-{# --- 2. MAIN CONTENT AREA --- #}
 {% block content %}
-<div class="grid grid-cols-12 gap-8">
-
-    {# --- CENTER COLUMN (Content) --- #}
-    <div class="col-span-12 xl:col-span-8 space-y-8">
-        
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-3xl font-bold text-gray-800">Dashboard</h2>
-                <p class="text-gray-500 text-sm mt-1">Welcome back, {{ nama_mahasiswa }}!</p>
-            </div>
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-feather="search" class="text-gray-400 w-4 h-4"></i>
-                </div>
-                <input type="text" placeholder="Search here..." class="pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-orange-100 focus:border-orange-300 outline-none text-sm w-64 transition-all shadow-sm">
-            </div>
+<div class="min-h-full bg-[#0F1115] p-6 lg:p-8"> 
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Dashboard</h2>
+            <p class="text-gray-400 text-sm mt-1">Welcome back, {{ nama_mahasiswa }}!</p>
         </div>
 
-        <div>
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Continue Learning</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                
-                {% for item in active_courses %}
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-md transition-all">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 rounded-full {% if forloop.counter|divisibleby:2 %}bg-blue-100 text-blue-600{% else %}bg-orange-100 text-orange-600{% endif %} flex items-center justify-center">
-                                <i data-feather="{% if forloop.counter|divisibleby:2 %}code{% else %}pen-tool{% endif %}" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">{{ item.course.course_name }}</h4>
-                                <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Development</p>
-                            </div>
+        <div class="flex items-center gap-4">
+            
+            {# --- TOMBOL NOTIFIKASI BARU --- #}
+            <div class="relative" id="notif-container">
+                <button onclick="toggleNotif()" class="p-3 bg-[#1A1D24] rounded-full text-gray-400 hover:text-white hover:bg-[#252A33] transition-all border border-white/5 shadow-md group">
+                    <i data-feather="bell" class="w-5 h-5"></i>
+                    <span id="notif-badge" class="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-[#1A1D24] hidden animate-pulse"></span>
+                </button>
+
+                <div id="notif-dropdown" class="absolute right-0 mt-4 w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-50">
+                    <div class="px-5 py-4 border-b border-white/5 bg-[#20242C] flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-white">Notifikasi</h3>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">Terbaru</span>
+                    </div>
+                    <div id="notif-list" class="max-h-[300px] overflow-y-auto custom-scroll">
+                        <div class="p-6 text-center text-gray-500 text-xs">Memuat...</div>
+                    </div>
+                </div>
+            </div>
+            {# -------------------------------- #}
+
+            <div class="hidden md:flex items-center gap-4 bg-[#1A1D24] p-2 pr-4 rounded-full border border-white/5">
+                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                    {{ nama_mahasiswa|slice:":1" }}
+                </div>
+                <div>
+                    <p class="text-white text-sm font-bold leading-none">{{ nama_mahasiswa }}</p>
+                    <p class="text-indigo-400 text-xs font-medium">Student Account</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="grid grid-cols-12 gap-8">
+
+        {# --- CENTER COLUMN (Main Content) --- #}
+        <div class="col-span-12 xl:col-span-8 space-y-8">
+            
+            {# HERO SECTION (Statistik Utama - Layout Baru!) #}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-[2rem] text-white relative overflow-hidden shadow-xl shadow-indigo-900/30">
+                     <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+                    <i data-feather="zap" class="absolute bottom-4 right-4 w-24 h-24 text-white/10"></i>
+
+                    <div class="relative z-10">
+                        <p class="text-indigo-100 text-sm font-medium mb-2 flex items-center">
+                            <i data-feather="activity" class="w-4 h-4 mr-2"></i> Learning Progress
+                        </p>
+                        <h3 class="text-5xl font-black mb-4">{{ stats.points }} <span class="text-2xl font-bold text-indigo-200">XP</span></h3>
+                        <div class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm backdrop-blur-md border border-white/10">
+                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                            Level Student Aktif
                         </div>
                     </div>
-                    <div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 mb-3 overflow-hidden">
-                            <div class="{% if forloop.counter|divisibleby:2 %}bg-blue-500{% else %}bg-orange-500{% endif %} h-2 rounded-full" style="width: {{ item.progress_percent }}%"></div>
+                </div>
+                
+                <div class="grid grid-rows-3 gap-4">
+                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                                <i data-feather="layers" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-gray-400 text-sm font-medium">Modul Selesai</span>
                         </div>
-                        <div class="flex justify-between items-center text-xs font-medium text-gray-500">
-                            <span class="flex items-center">
-                                <i data-feather="book" class="w-3 h-3 mr-1"></i> 
-                                {{ item.completed_count }}/{{ item.total_modules }} Modules
-                            </span>
-                            <span class="flex items-center"><i data-feather="clock" class="w-3 h-3 mr-1"></i> -- min</span>
+                        <span class="text-white text-xl font-bold">{{ stats.modules_done }}</span>
+                    </div>
+                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                        <div class="flex items-center gap-3">
+                             <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                                <i data-feather="check-square" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-gray-400 text-sm font-medium">Tugas Submit</span>
+                        </div>
+                        <span class="text-white text-xl font-bold">{{ stats.assignments_done }}</span>
+                    </div>
+                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                        <div class="flex items-center gap-3">
+                             <div class="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
+                                <i data-feather="bar-chart-2" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-gray-400 text-sm font-medium">Rata-rata Nilai</span>
+                        </div>
+                        <span class="text-white text-xl font-bold">{{ stats.avg_score }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {# FILTER BAR (Pindah ke bawah hero section) #}
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
+                <h3 class="text-xl font-bold text-white mb-0">Aktivitas Belajar</h3>
+                <form id="filter-form" class="flex gap-3 w-full md:w-auto">
+                     <div class="relative flex-1 md:w-64 group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-feather="search" class="text-gray-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors"></i>
+                        </div>
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi..." 
+                               class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600 
+                                      focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 transition-all outline-none">
+                    </div>
+                     <div class="relative w-40">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-feather="filter" class="text-gray-500 w-4 h-4"></i>
+                        </div>
+                        <select name="sort" class="w-full pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
+                            <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
+                            <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Terlama</option>
+                            <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <i data-feather="chevron-down" class="text-gray-600 w-4 h-4"></i>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {# CONTAINER UNTUK AJAX KONTEN UTAMA #}
+            <div id="dashboard-content" class="min-h-[400px]">
+                {% include 'components/dashboard_content.html' %}
+            </div>
+            
+        </div>
+
+        {# --- RIGHT COLUMN (Sidebar Kanan - Lebih Bersih) --- #}
+        <div class="col-span-12 xl:col-span-4 space-y-6">
+            
+            {# DEADLINE CARD #}
+            <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
+                 <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                <div class="flex justify-between items-center mb-6 relative z-10">
+                    <h4 class="font-bold text-white text-lg flex items-center">
+                        <span class="bg-red-500/20 text-red-500 p-2 rounded-lg mr-3">
+                             <i data-feather="clock" class="w-5 h-5"></i>
+                        </span>
+                        Deadline Terdekat
+                    </h4>
+                </div>
+                
+                <div class="space-y-4 relative z-10">
+                    {% for task in pending_tasks %}
+                    <div class="group flex items-center p-3 rounded-2xl bg-[#252A33] border border-transparent hover:border-red-500/30 transition-all cursor-pointer">
+                        <div class="flex-shrink-0 w-12 h-12 bg-[#1A1D24] rounded-xl flex flex-col items-center justify-center text-red-400 border border-white/5 group-hover:bg-red-500/10 transition-all">
+                            <span class="text-[10px] font-bold uppercase tracking-wide leading-none mb-0.5">{{ task.deadline|date:"M" }}</span>
+                            <span class="text-lg font-extrabold leading-none text-white">{{ task.deadline|date:"d" }}</span>
                         </div>
                         
-                        {% if item.first_module_id %}
-                        <a href="{% url 'detail_modul' item.first_module_id %}" class="mt-4 inline-block {% if forloop.counter|divisibleby:2 %}text-blue-600{% else %}text-orange-600{% endif %} text-sm font-bold hover:underline">
-                            Resume Course &rarr;
+                        <div class="ml-4 flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-200 truncate group-hover:text-white transition-colors">{{ task.title }}</p>
+                            <p class="text-xs text-gray-500 truncate mt-0.5">{{ task.module.course.course_name }}</p>
+                        </div>
+                        
+                        <a href="{% url 'detail_modul' task.module.module_id %}" class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300 hover:bg-red-500 hover:text-white">
+                            <i data-feather="arrow-right" class="w-4 h-4"></i>
                         </a>
-                        {% else %}
-                        <span class="mt-4 inline-block text-gray-400 text-sm font-bold cursor-not-allowed">
-                            Coming Soon
+                    </div>
+                    {% empty %}
+                    <div class="py-10 text-center opacity-50 bg-[#252A33] rounded-2xl border border-dashed border-white/10">
+                        <i data-feather="check-circle" class="w-8 h-8 text-gray-500 mx-auto mb-2"></i>
+                        <p class="text-sm text-gray-400">Semua tugas aman!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# DISKUSI TERBARU #}
+            <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-white text-lg flex items-center">
+                        <span class="bg-indigo-500/20 text-indigo-400 p-2 rounded-lg mr-3">
+                             <i data-feather="message-square" class="w-5 h-5"></i>
                         </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-span-full py-8 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                    <p class="text-gray-500">You have not enrolled in any courses yet.</p>
-                </div>
-                {% endfor %}
-
-            </div>
-        </div>
-
-        <div>
-            <div class="flex justify-between items-end mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Explore All Courses</h3>
+                        Diskusi Terbaru
+                    </h4>
+                    <a href="{% url 'chat_index' %}" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua</a>
                 </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {# UPDATED LOOP: Uses available_courses passed from view #}
-                {% for course in available_courses %}
-                <a href="{% url 'course_detail' course.course_id %}" class="block group h-full">
-                    <div class="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
-                        <div class="relative h-48 rounded-2xl overflow-hidden bg-gray-800 mb-4 flex-shrink-0">
-                            {# Placeholder Image - In real app, add ImageField to Course model #}
-                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" 
-                                alt="{{ course.course_name }}" 
-                                class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500">
+                <div class="space-y-5 relative">
+                    <div class="absolute left-[19px] top-2 bottom-2 w-[2px] bg-[#252A33]"></div>
+
+                    {% for chat in recent_discussions %}
+                    <div class="flex gap-4 relative z-10 group">
+                        <div class="w-10 h-10 rounded-full bg-[#252A33] border-2 border-[#1A1D24] flex items-center justify-center text-xs font-bold text-gray-300 group-hover:border-indigo-500 transition-all shrink-0">
+                            {{ chat.user.name|slice:":1" }}
+                        </div>
+                        
+                        <div class="flex-1 min-w-0 bg-[#252A33] p-3 rounded-xl rounded-tl-none border border-transparent group-hover:border-indigo-500/30 transition-all">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <p class="text-xs font-bold text-indigo-300 truncate">{{ chat.user.name }}</p>
+                                <span class="text-[9px] text-gray-600 font-mono">{{ chat.created_at|timesince }}</span>
+                            </div>
                             
-                            <div class="absolute inset-0 p-4 flex flex-col justify-between bg-gradient-to-t from-black/80 to-transparent">
-                                <div class="flex justify-between items-start">
-                                    <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg border border-white/30">COURSE</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-xl leading-tight mb-1 line-clamp-2">{{ course.course_name }}</h4>
-                                    <p class="text-gray-300 text-xs">{{ course.lecturer.name }}</p>
-                                </div>
-                            </div>
-
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50">
-                                    <i data-feather="arrow-right" class="w-5 h-5 text-white"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col flex-1 justify-between">
-                            <p class="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed">
-                                {{ course.description|truncatewords:12|default:"Pelajari materi ini untuk meningkatkan skill Anda." }}
+                            <p class="text-xs text-gray-300 leading-relaxed italic">
+                                "{{ chat.message|truncatewords:8 }}"
                             </p>
-
-                            <div class="flex justify-between items-center border-t border-gray-50 pt-3">
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
-                                        {{ course.lecturer.name|slice:":1" }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        <span class="font-bold text-gray-700">Lecturer</span>
-                                    </div>
-                                </div>
-                                <span class="text-indigo-600 text-sm font-bold hover:underline">Lihat Detail</span>
-                            </div>
+                            <p class="text-[9px] font-bold text-gray-500 mt-2 uppercase tracking-wider flex items-center">
+                                <i data-feather="hash" class="w-3 h-3 mr-1"></i> {{ chat.course.course_name }}
+                            </p>
                         </div>
                     </div>
-                </a>
-                {% empty %}
-                <div class="col-span-2 py-12 text-center bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i data-feather="book" class="w-8 h-8 text-gray-300"></i>
-                    </div>
-                    <p class="text-gray-500 font-medium">Belum ada kelas yang tersedia.</p>
+                    {% empty %}
+                    <p class="text-center text-sm text-gray-500 py-6 bg-[#252A33] rounded-2xl border border-dashed border-white/10">Belum ada aktivitas diskusi.</p>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
+
         </div>
-        
     </div>
-
-    {# --- RIGHT COLUMN (Stats Sidebar - REAL DATA) --- #}
-    <div class="col-span-12 xl:col-span-4 space-y-6">
-        
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-            <div class="text-center relative mt-2">
-                <div class="w-24 h-24 bg-indigo-50 rounded-full mx-auto mb-3 p-1 border-2 border-dashed border-indigo-300 flex items-center justify-center">
-                    <span class="text-3xl font-extrabold text-indigo-600">{{ nama_mahasiswa|slice:":1" }}</span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800">{{ nama_mahasiswa }}</h3>
-                <p class="text-sm text-gray-500">Mahasiswa Aktif</p>
-                
-                <div class="mt-2 inline-flex items-center px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200">
-                    <i data-feather="star" class="w-3 h-3 mr-1"></i> {{ stats.points }} Poin XP
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 mt-8 px-1 border-t border-gray-50 pt-6">
-                <div class="text-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div class="w-10 h-10 mx-auto bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-2">
-                        <i data-feather="book-open" class="w-5 h-5"></i>
-                    </div>
-                    <span class="block font-bold text-lg text-gray-800">{{ stats.modules_done }}</span>
-                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Modul</span>
-                </div>
-                <div class="text-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div class="w-10 h-10 mx-auto bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-2">
-                        <i data-feather="check-circle" class="w-5 h-5"></i>
-                    </div>
-                    <span class="block font-bold text-lg text-gray-800">{{ stats.assignments_done }}</span>
-                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tugas</span>
-                </div>
-                <div class="text-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div class="w-10 h-10 mx-auto bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center mb-2">
-                        <i data-feather="award" class="w-5 h-5"></i>
-                    </div>
-                    <span class="block font-bold text-lg text-gray-800">{{ stats.avg_score }}</span>
-                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rata-rata</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-bold text-gray-700 text-sm flex items-center">
-                    <i data-feather="clock" class="w-4 h-4 mr-2 text-red-500"></i> Deadline Terdekat
-                </h4>
-            </div>
-            <div class="space-y-3">
-                {% for task in pending_tasks %}
-                <div class="flex items-start space-x-3 p-3 rounded-xl bg-red-50/50 border border-red-100">
-                    <div class="flex-shrink-0 mt-1">
-                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-gray-800 truncate">{{ task.title }}</p>
-                        <p class="text-xs text-gray-500 truncate">{{ task.module.course.course_name }}</p>
-                        <p class="text-[10px] font-bold text-red-500 mt-1">
-                            <i data-feather="calendar" class="w-3 h-3 inline mr-0.5"></i> {{ task.deadline|date:"d M, H:i" }}
-                        </p>
-                    </div>
-                    <a href="{% url 'detail_modul' task.module.module_id %}" class="text-xs bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg font-bold hover:bg-red-50">
-                        Kerjakan
-                    </a>
-                </div>
-                {% empty %}
-                <div class="text-center py-6">
-                    <i data-feather="smile" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
-                    <p class="text-xs text-gray-400">Tidak ada tugas pending. Kerja bagus!</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-            <div class="flex justify-between items-center mb-6">
-                <h4 class="font-bold text-gray-700 text-sm flex items-center">
-                    <i data-feather="message-circle" class="w-4 h-4 mr-2 text-indigo-500"></i> Diskusi Terbaru
-                </h4>
-                <a href="{% url 'chat_index' %}" class="text-xs text-indigo-600 font-bold hover:underline">Lihat Semua</a>
-            </div>
-            <div class="space-y-4">
-                {% for chat in recent_discussions %}
-                <div class="flex gap-3 items-start">
-                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                        {{ chat.user.name|slice:":1" }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-baseline">
-                            <p class="text-xs font-bold text-gray-800 truncate">{{ chat.user.name }}</p>
-                            <span class="text-[9px] text-gray-400">{{ chat.created_at|timesince }} lalu</span>
-                        </div>
-                        <p class="text-xs text-gray-500 line-clamp-1 bg-gray-50 p-2 rounded-lg mt-1 border border-gray-100 italic">
-                            "{{ chat.message }}"
-                        </p>
-                        <p class="text-[9px] text-indigo-400 mt-1 font-medium">{{ chat.course.course_name }}</p>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="text-center text-xs text-gray-400 py-4">Belum ada aktivitas diskusi.</p>
-                {% endfor %}
-            </div>
-        </div>
-
-    </div>
-
-    
 </div>
+
+<style>
+    /* Reset background body utama dan sidebar */
+    body, aside, header, main {
+        background-color: #0F1115 !important; /* Warna utama background gelap */
+        color: #e5e5e5;
+        border-color: #1A1D24 !important;
+    }
+    
+    /* Override warna border dan separator di base */
+    .border-gray-200, .border-gray-100, .divide-gray-100 > * + * {
+        border-color: #1A1D24 !important;
+    }
+
+    /* Scrollbar Gelap Modern */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0F1115; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    feather.replace();
+
+    // --- SCRIPT NOTIFIKASI (BARU) ---
+    function toggleNotif() {
+        const dropdown = document.getElementById('notif-dropdown');
+        if (dropdown.classList.contains('invisible')) {
+            dropdown.classList.remove('invisible', 'opacity-0', 'scale-95');
+            dropdown.classList.add('opacity-100', 'scale-100');
+            fetchNotifications(); 
+        } else {
+            dropdown.classList.add('invisible', 'opacity-0', 'scale-95');
+            dropdown.classList.remove('opacity-100', 'scale-100');
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('notif-container');
+        const dropdown = document.getElementById('notif-dropdown');
+        if (container && !container.contains(e.target) && !dropdown.classList.contains('invisible')) {
+            toggleNotif();
+        }
+    });
+
+    async function fetchNotifications() {
+        try {
+            const res = await fetch("{% url 'get_notifications_ajax' %}");
+            const data = await res.json();
+            if(data.status === 'success') {
+                const list = document.getElementById('notif-list');
+                const badge = document.getElementById('notif-badge');
+                
+                if(data.count > 0) badge.classList.remove('hidden'); 
+                else badge.classList.add('hidden');
+
+                if (data.notifications.length === 0) {
+                    list.innerHTML = `<div class="p-6 text-center text-gray-500 text-xs">Tidak ada notifikasi baru.</div>`;
+                } else {
+                    let html = '';
+                    data.notifications.forEach(n => {
+                        let icon = n.type === 'message' ? 'mail' : 'message-circle';
+                        let iconColor = n.type === 'message' ? 'text-indigo-400 bg-indigo-500/10' : 'text-orange-400 bg-orange-500/10';
+                        html += `
+                        <a href="${n.url}" class="block p-4 hover:bg-[#252A33] transition-colors border-b border-white/5 last:border-0 group">
+                            <div class="flex gap-3">
+                                <div class="flex-shrink-0 mt-1">
+                                    <div class="w-8 h-8 rounded-full ${iconColor} flex items-center justify-center border border-white/5"><i data-feather="${icon}" class="w-3.5 h-3.5"></i></div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-start mb-0.5">
+                                        <p class="text-xs font-bold text-white truncate pr-2">${n.sender}</p>
+                                        <span class="text-[9px] text-gray-500 whitespace-nowrap">${n.time}</span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-400 leading-snug line-clamp-2 group-hover:text-gray-300">${n.text}</p>
+                                </div>
+                            </div>
+                        </a>`;
+                    });
+                    list.innerHTML = html;
+                    feather.replace();
+                }
+            }
+        } catch(e) { console.error("Gagal ambil notif", e); }
+    }
+
+    // Poll setiap 10 detik
+    setInterval(fetchNotifications, 10000);
+    fetchNotifications();
+    // ---------------------------------
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('filter-form');
+        // Tambahkan event listener untuk input text dan select
+        const inputs = form.querySelectorAll('input[type="text"], select');
+        const contentContainer = document.getElementById('dashboard-content');
+        let timeout = null;
+
+        function fetchContent() {
+            // Efek loading yang lebih halus
+            contentContainer.style.opacity = '0.5';
+            contentContainer.style.filter = 'blur(2px)';
+            contentContainer.style.transition = 'all 0.2s ease';
+            
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(new FormData(form));
+            
+            fetch(`${url.pathname}?${params.toString()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contentContainer.innerHTML = html;
+                feather.replace();
+                // Kembalikan tampilan normal
+                contentContainer.style.opacity = '1';
+                contentContainer.style.filter = 'blur(0px)';
+                
+                window.history.pushState({}, '', `${url.pathname}?${params.toString()}`);
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                contentContainer.style.opacity = '1';
+                contentContainer.style.filter = 'blur(0px)';
+            });
+        }
+
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.tagName === 'INPUT') { // Jika input text, pakai debounce
+                    clearTimeout(timeout);
+                    timeout = setTimeout(fetchContent, 300);
+                } else { // Jika select, langsung fetch
+                    fetchContent();
+                }
+            });
+        });
+    });
+</script>
+<style>
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 {% endblock %}

@@ -13,6 +13,7 @@ from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib.auth import update_session_auth_hash
+from django.core.paginator import Paginator
 import json
 
 def login_view(request):
@@ -74,13 +75,60 @@ def logout_view(request):
 def dosen_dashboard(request):
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
         return redirect('login_view')
+    
     user_id = request.session['user_id']
     nama_dosen = request.session.get('name', 'Dosen')
-    courses = Course.objects.filter(lecturer_id=user_id)
-    modules = Module.objects.filter(course__in=courses).order_by('-created_at')
-    context = {'nama_dosen': nama_dosen, 'courses': courses, 'modules': modules, 
-               'total_courses': courses.count(), 'total_modules': modules.count(), 
-               'total_students': Enrollment.objects.filter(course__in=courses).count()}
+    
+    # 1. Data Mata Kuliah & Mahasiswa
+    courses_qs = Course.objects.filter(lecturer_id=user_id)
+    
+    # --- LOGIC BARU: Attach mahasiswa ke setiap course ---
+    courses_data = []
+    for course in courses_qs:
+        # Ambil 3 mahasiswa terakhir yang mendaftar
+        students = User.objects.filter(
+            enrollment__course=course
+        ).distinct().order_by('-enrollment__enrolled_at')[:3]
+        
+        total_enrolled = Enrollment.objects.filter(course=course).count()
+        
+        courses_data.append({
+            'course_id': course.course_id,
+            'course_name': course.course_name,
+            'students': students,
+            'student_count': total_enrolled
+        })
+    # -----------------------------------------------------
+
+    # 2. Data Modul & Stats Lainnya
+    modules = Module.objects.filter(course__in=courses_qs).order_by('-created_at')
+    
+    # Hitung total unik mahasiswa di semua kelas
+    total_students_all = Enrollment.objects.filter(course__in=courses_qs).values('user').distinct().count()
+    
+    # Ambil beberapa mahasiswa terbaru untuk widget statistik atas
+    latest_students = User.objects.filter(
+        enrollment__course__in=courses_qs
+    ).distinct().order_by('-created_at')[:4]
+    
+    avg_data = Grade.objects.filter(course__in=courses_qs).aggregate(Avg('score'))
+    avg_score = avg_data['score__avg'] or 0
+    
+    recent_submissions = Submission.objects.filter(
+        assignment__module__course__in=courses_qs
+    ).select_related('student', 'assignment').order_by('-submitted_at')[:4]
+
+    context = {
+        'nama_dosen': nama_dosen,
+        'courses': courses_data, # Gunakan data list baru
+        'modules': modules,
+        'total_courses': courses_qs.count(),
+        'total_modules': modules.count(),
+        'total_students': total_students_all,
+        'latest_students': latest_students,
+        'avg_score': round(avg_score, 1),
+        'recent_submissions': recent_submissions
+    }
     return render(request, 'dosen_dashboard.html', context)
 
 def detail_modul_dosen(request, modul_id):
@@ -178,19 +226,22 @@ def mahasiswa_dashboard(request):
     user_id = request.session['user_id']
     nama_mahasiswa = request.session.get('name', 'Mahasiswa')
     
-    # 1. Enrollment & Progress Real-time
+    # --- 1. GET PARAMS (Search, Sort, Filter) ---
+    search_query = request.GET.get('q', '').lower()
+    sort_option = request.GET.get('sort', 'newest') # newest, oldest, a-z, z-a
+    filter_status = request.GET.get('filter', 'all') # all, active, completed
+
     enrollments = Enrollment.objects.filter(user_id=user_id).select_related('course', 'last_module')
     
     active_courses = []
-    enrolled_course_ids = [] # Simpan ID untuk query selanjutnya
-    total_modules_done_all = 0 # Total modul selesai semua course
+    enrolled_course_ids = [] 
+    total_modules_done_all = 0 
 
     for enroll in enrollments:
         enrolled_course_ids.append(enroll.course.course_id)
         course = enroll.course
         
         # Hitung Progress
-        # Ambil semua modul di course ini urut berdasarkan pembuatan
         course_modules = Module.objects.filter(course=course).order_by('created_at')
         mod_ids = list(course_modules.values_list('module_id', flat=True))
         total_mods = len(mod_ids)
@@ -199,40 +250,87 @@ def mahasiswa_dashboard(request):
         resume_id = None
         
         if enroll.last_module and enroll.last_module.module_id in mod_ids:
-            # Asumsi: jika last_module adalah modul ke-3, berarti sudah baca 3 modul
             current_index = mod_ids.index(enroll.last_module.module_id)
             completed_count = current_index + 1
             resume_id = enroll.last_module.module_id
         elif total_mods > 0:
-            # Kalau belum pernah baca, mulai dari modul pertama
             resume_id = mod_ids[0]
 
         progress = int((completed_count / total_mods) * 100) if total_mods > 0 else 0
         total_modules_done_all += completed_count
+
+        # --- 2. FILTER LOGIC FOR ACTIVE COURSES ---
+        # Filter by Search Text
+        if search_query and (search_query not in course.course_name.lower()) and (search_query not in (course.description or '').lower()):
+            continue 
+
+        # Filter by Status
+        if filter_status == 'completed' and progress < 100:
+            continue
+        if filter_status == 'active' and progress == 100:
+            continue
 
         active_courses.append({
             'course': course,
             'total_modules': total_mods,
             'first_module_id': resume_id,
             'progress_percent': progress,
-            'completed_count': completed_count
+            'completed_count': completed_count,
+            'created_at': course.created_at # Needed for sorting
         })
 
-    # --- 2. DATA STATISTIK REAL (SIDEBAR) ---
+    # --- 3. SORT LOGIC ---
+    if sort_option == 'a-z':
+        active_courses.sort(key=lambda x: x['course'].course_name)
+    elif sort_option == 'z-a':
+        active_courses.sort(key=lambda x: x['course'].course_name, reverse=True)
+    elif sort_option == 'oldest':
+        active_courses.sort(key=lambda x: x['created_at'])
+    else: # newest (default)
+        active_courses.sort(key=lambda x: x['created_at'], reverse=True)
+
+
+    # --- 4. AVAILABLE COURSES QUERY ---
+    available_courses_qs = Course.objects.exclude(course_id__in=enrolled_course_ids).select_related('lecturer')
+
+    # Filter Search
+    if search_query:
+        available_courses_qs = available_courses_qs.filter(
+            Q(course_name__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
     
-    # A. Tugas Selesai (Count Submission)
+    # Sort Available Courses
+    if sort_option == 'a-z':
+        available_courses_qs = available_courses_qs.order_by('course_name')
+    elif sort_option == 'z-a':
+        available_courses_qs = available_courses_qs.order_by('-course_name')
+    elif sort_option == 'oldest':
+        available_courses_qs = available_courses_qs.order_by('created_at')
+    else:
+        available_courses_qs = available_courses_qs.order_by('-created_at')
+
+    context = {
+        'nama_mahasiswa': nama_mahasiswa,
+        'active_courses': active_courses,
+        'available_courses': available_courses_qs,
+        'search_query': search_query,
+        'sort_option': sort_option,
+        'filter_status': filter_status
+    }
+
+    # === AJAX HANDLER ===
+    # Jika request AJAX, kembalikan potongan HTML saja, bukan full page
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/dashboard_content.html', context)
+
+    # --- JIKA BUKAN AJAX, LOAD DATA STATISTIK UTUH ---
     assignments_done = Submission.objects.filter(student_id=user_id).count()
-    
-    # B. Rata-rata Nilai (Dari Model Grade)
     avg_data = Grade.objects.filter(user_id=user_id).aggregate(Avg('score'))
-    avg_score = avg_data['score__avg'] or 0 # Kalau belum ada nilai, set 0
-    
-    # C. Poin Keaktifan (Rumus Sederhana: Tugas*50 + Modul*10 + Diskusi*5)
+    avg_score = avg_data['score__avg'] or 0 
     discussion_count = Discussion.objects.filter(user_id=user_id).count()
     total_points = (assignments_done * 50) + (total_modules_done_all * 10) + (discussion_count * 5)
 
-    # D. Tugas Pending (Deadline Terdekat)
-    # Cari assignment di course yang diikuti, TAPI belum ada di Submission user
     all_assignments = Assignment.objects.filter(
         module__course__course_id__in=enrolled_course_ids
     ).order_by('deadline')
@@ -241,21 +339,13 @@ def mahasiswa_dashboard(request):
     for a in all_assignments:
         if not Submission.objects.filter(assignment=a, student_id=user_id).exists():
             pending_tasks.append(a)
-            if len(pending_tasks) >= 3: break # Ambil 3 saja
+            if len(pending_tasks) >= 3: break 
 
-    # E. Diskusi Terbaru (Dari semua kelas yang diikuti)
     recent_discussions = Discussion.objects.filter(
         course_id__in=enrolled_course_ids
     ).select_related('user', 'course').order_by('-created_at')[:4]
 
-    # Available Courses (Kecuali yang sudah diambil)
-    available_courses = Course.objects.exclude(course_id__in=enrolled_course_ids).select_related('lecturer')
-
-    context = {
-        'nama_mahasiswa': nama_mahasiswa,
-        'active_courses': active_courses,
-        'available_courses': available_courses,
-        # Kirim Data Statistik Baru
+    context.update({
         'stats': {
             'modules_done': total_modules_done_all,
             'assignments_done': assignments_done,
@@ -264,8 +354,9 @@ def mahasiswa_dashboard(request):
             'courses_count': len(enrolled_course_ids)
         },
         'pending_tasks': pending_tasks,
-        'recent_discussions': recent_discussions
-    }
+        'recent_discussions': recent_discussions,
+    })
+
     return render(request, 'mahasiswa_dashboard.html', context)
 
 # --- 2. NEW: COURSE DETAIL VIEW ---
@@ -961,67 +1052,90 @@ def signup_view(request):
     return render(request, 'signup.html')
 
 def my_learning(request):
-    # 1. Cek Login Session
+    # 1. Cek Login
     if not request.session.get('user_id'):
         return redirect('login_view')
 
     user_id = request.session['user_id']
     
-    # 2. Ambil Enrollment (Daftar kursus yang diambil user)
-    # Gunakan select_related untuk performa (mengambil data relasi sekaligus)
-    enrollments_query = Enrollment.objects.filter(user_id=user_id).select_related('course', 'course__lecturer', 'last_module')
+    # 2. Ambil Parameter Filter dari URL
+    search_query = request.GET.get('q', '').lower()
+    sort_option = request.GET.get('sort', 'newest')
+    filter_status = request.GET.get('filter', 'all')
     
-    # List baru untuk menampung data yang sudah dihitung progress-nya
-    enrollments_data = []
+    # 3. Query Dasar (Optimized dengan select_related)
+    enrollments_qs = Enrollment.objects.filter(user_id=user_id).select_related('course', 'course__lecturer', 'last_module')
     
-    for enroll in enrollments_query:
-        # --- LOGIKA HITUNG PROGRESS ---
+    final_list = []
+    
+    # 4. Processing Data (Hitung Progress & Filter Manual)
+    for enroll in enrollments_qs:
+        # A. Filter Pencarian (Nama Kursus atau Deskripsi)
+        c_name = enroll.course.course_name.lower()
+        c_desc = (enroll.course.description or '').lower()
         
-        # A. Ambil semua modul di course ini (diurutkan sesuai urutan belajar)
-        # Pastikan order_by sama dengan yang dipakai di tampilan modul (misal: created_at atau id)
-        modules = Module.objects.filter(course=enroll.course).order_by('created_at')
-        total_modules = modules.count()
+        if search_query and (search_query not in c_name) and (search_query not in c_desc):
+            continue # Skip jika tidak cocok search
+
+        # B. Hitung Progress
+        # Ambil semua ID modul dalam kursus ini secara berurutan
+        mod_ids = list(Module.objects.filter(course=enroll.course).order_by('created_at').values_list('module_id', flat=True))
+        total = len(mod_ids)
         
-        completed_count = 0
-        progress_percent = 0
+        completed = 0
         resume_id = None
         
-        # B. Hitung posisi user saat ini
-        if total_modules > 0:
-            # Tentukan ID modul untuk tombol "Lanjut Belajar"
-            if enroll.last_module:
-                resume_id = enroll.last_module.module_id
-                
-                # Hitung progress: Cari index modul terakhir di dalam list semua modul
-                # Contoh: Jika user di modul ke-3 dari 10, maka progress = 30%
-                module_list = list(modules) # Convert queryset ke list agar bisa cari index
-                try:
-                    # index() mulai dari 0, jadi tambah 1
-                    current_index = module_list.index(enroll.last_module)
-                    completed_count = current_index + 1
-                    progress_percent = int((completed_count / total_modules) * 100)
-                except ValueError:
-                    # Jika last_module user ternyata sudah dihapus dosen, reset ke 0
-                    completed_count = 0
+        if total > 0:
+            # Tentukan posisi terakhir
+            if enroll.last_module_id and enroll.last_module_id in mod_ids:
+                completed = mod_ids.index(enroll.last_module_id) + 1
+                resume_id = enroll.last_module_id
             else:
-                # Jika belum pernah buka modul, arahkan ke modul pertama
-                first_mod = modules.first()
-                if first_mod:
-                    resume_id = first_mod.module_id
+                # Jika belum mulai, arahkan ke modul pertama
+                resume_id = mod_ids[0]
         
-        # C. Tempelkan hasil hitungan ke objek enrollment
-        # (Teknik ini disebut 'monkey patching' atribut sementara untuk dikirim ke template)
-        enroll.total_modules = total_modules
-        enroll.completed_count = completed_count
-        enroll.progress_percent = progress_percent
-        enroll.first_module_id = resume_id # Field ini dipakai tombol di template
+        pct = int((completed / total) * 100) if total > 0 else 0
+
+        # C. Filter Status (Active/Completed)
+        if filter_status == 'completed' and pct < 100: continue
+        if filter_status == 'active' and pct == 100: continue
+
+        # D. Tempel Data Tambahan ke Objek (Monkey Patching untuk Template)
+        enroll.progress_percent = pct
+        enroll.total_modules = total
+        enroll.completed_count = completed
+        enroll.first_module_id = resume_id
         
-        enrollments_data.append(enroll)
+        final_list.append(enroll)
+
+    # 5. Sorting (Pengurutan List)
+    if sort_option == 'a-z':
+        final_list.sort(key=lambda x: x.course.course_name.lower())
+    elif sort_option == 'z-a':
+        final_list.sort(key=lambda x: x.course.course_name.lower(), reverse=True)
+    elif sort_option == 'oldest':
+        final_list.sort(key=lambda x: x.enrolled_at) # Berdasarkan tanggal daftar
+    else: # newest (Default)
+        final_list.sort(key=lambda x: x.enrolled_at, reverse=True)
+
+    # 6. Pagination (9 Item per halaman)
+    paginator = Paginator(final_list, 9)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'enrollments': enrollments_data,
-        'nama_mahasiswa': request.session.get('name', 'Mahasiswa') 
+        'enrollments': page_obj, # Objek Page dikirim ke template
+        'nama_mahasiswa': request.session.get('name', 'Mahasiswa'),
+        'search_query': search_query,
+        'sort_option': sort_option,
+        'filter_status': filter_status
     }
+
+    # 7. Response AJAX (Hanya render potongan kartu)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/my_learning_content.html', context)
+
+    # 8. Response Halaman Penuh
     return render(request, 'mahasiswa/my_learning.html', context)
 
 def profile_view(request):
@@ -1514,3 +1628,135 @@ def get_private_msg_ajax(request, other_user_id):
         'status': 'success',
         'messages': data
     })
+
+def landing_page(request):
+    # Jika user sudah login, redirect langsung ke dashboard masing-masing
+    if request.session.get('user_id'):
+        role = request.session.get('role_name')
+        if role == 'Dosen':
+            return redirect('dosen_dashboard')
+        elif role == 'Mahasiswa':
+            return redirect('mahasiswa_dashboard')
+    
+    return render(request, 'landing_page.html')
+
+def tambah_course(request):
+    # 1. Cek Login & Role Dosen
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+        return redirect('login_view')
+
+    if request.method == 'POST':
+        # 2. Ambil Data Input
+        course_name = request.POST.get('course_name')
+        description = request.POST.get('description')
+        user_id = request.session['user_id']
+
+        try:
+            # 3. Simpan ke Database
+            lecturer = User.objects.get(user_id=user_id)
+            
+            Course.objects.create(
+                course_name=course_name,
+                description=description,
+                lecturer=lecturer
+            )
+            
+            messages.success(request, "Mata Kuliah berhasil dibuat!")
+            return redirect('dosen_dashboard')
+
+        except Exception as e:
+            messages.error(request, f"Terjadi kesalahan: {e}")
+
+    # 4. Render Form (GET)
+    return render(request, 'course/form_course.html')
+
+def edit_course(request, course_id):
+    # 1. Cek Login & Role
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+        return redirect('login_view')
+
+    # 2. Ambil Data Course (Pastikan milik dosen yang sedang login agar aman)
+    user_id = request.session['user_id']
+    course = get_object_or_404(Course, course_id=course_id, lecturer_id=user_id)
+
+    if request.method == 'POST':
+        # 3. Proses Update
+        course.course_name = request.POST.get('course_name')
+        course.description = request.POST.get('description')
+        course.save()
+        
+        messages.success(request, "Informasi mata kuliah berhasil diperbarui.")
+        return redirect('dosen_dashboard')
+
+    # 4. Render Form dengan Data Lama
+    return render(request, 'course/form_course.html', {'course': course})
+
+def get_notifications_ajax(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return JsonResponse({'status': 'error'}, status=403)
+
+    try:
+        # 1. Ambil Pesan Pribadi Terbaru (Receiver = Saya)
+        # Kita ambil 3 pesan terbaru yang diterima
+        private_msgs = Message.objects.filter(receiver_id=user_id).select_related('sender').order_by('-sent_at')[:3]
+        
+        # 2. Ambil Diskusi Kelas Terbaru (Dari Course yang diikuti)
+        # Logic: Cari course yg user enroll (jika mhs) atau ajar (jika dosen)
+        role_name = request.session.get('role_name')
+        my_course_ids = []
+        
+        if role_name == 'Mahasiswa':
+            my_course_ids = Enrollment.objects.filter(user_id=user_id).values_list('course_id', flat=True)
+        elif role_name == 'Dosen':
+            my_course_ids = Course.objects.filter(lecturer_id=user_id).values_list('course_id', flat=True)
+            
+        # Ambil diskusi terbaru DARI ORANG LAIN (bukan saya) di course saya
+        # Limit 3 diskusi terbaru
+        discussions = Discussion.objects.filter(
+            course_id__in=my_course_ids
+        ).exclude(user_id=user_id).select_related('user', 'course').order_by('-created_at')[:3]
+
+        # 3. Gabungkan & Format Data
+        notif_list = []
+        
+        # Format Pesan Pribadi
+        for msg in private_msgs:
+            notif_list.append({
+                'type': 'message',
+                'id': msg.message_id,
+                'sender': msg.sender.name,
+                'avatar': msg.sender.name[0],
+                'text': msg.message_text[:40] + '...' if len(msg.message_text) > 40 else msg.message_text,
+                'time': msg.sent_at.strftime("%d %b, %H:%M"),
+                'timestamp': msg.sent_at.timestamp(),
+                'url': f'/messages/{msg.sender.user_id}/' # Link ke private chat
+            })
+            
+        # Format Diskusi
+        for disc in discussions:
+            notif_list.append({
+                'type': 'discussion',
+                'id': disc.discussion_id,
+                'sender': disc.user.name,
+                'avatar': disc.user.name[0],
+                'text': f"di {disc.course.course_name}: {disc.message[:30]}...",
+                'time': disc.created_at.strftime("%d %b, %H:%M"),
+                'timestamp': disc.created_at.timestamp(),
+                'url': f'/chat/{disc.course.course_id}/' # Link ke group chat
+            })
+            
+        # Sort gabungan berdasarkan waktu terbaru
+        notif_list.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        # Ambil 5 teratas saja untuk dropdown
+        final_notifs = notif_list[:5]
+        
+        return JsonResponse({
+            'status': 'success',
+            'notifications': final_notifs,
+            'count': len(final_notifs) # Bisa dipakai untuk badge merah angka
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
