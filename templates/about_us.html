@@ -64,7 +64,6 @@
         {# DESKTOP MENU #}
         <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
             <a href="{% url 'landing_page' %}" class="hover:text-white transition-colors">Beranda</a>
-            {# FIX: Menambahkan link ke Fitur Utama #}
             <a href="{% url 'landing_page' %}#features" class="hover:text-white transition-colors">Fitur Utama</a>
             <a href="#" class="text-white">Tentang Kami</a>
         </div>
@@ -126,96 +125,82 @@
     </p>
 </main>
 
-{# --- CONTENT GRID --- #}
-<section class="py-12 px-6 max-w-7xl mx-auto">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div class="glass-card p-8 md:p-10 flex flex-col justify-center min-h-[300px] relative overflow-hidden group">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-600/20 transition-colors duration-500"></div>
-
-            <div class="w-12 h-12 bg-[#1A1D24] border border-white/10 rounded-xl flex items-center justify-center mb-6 text-indigo-400">
-                <i data-feather="target" class="w-6 h-6"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-white mb-3">Visi Kami</h3>
-            <p class="text-gray-400 leading-relaxed">
-                Menjadi platform Learning Management System (LMS) yang paling adaptif dan ramah pengguna, memberdayakan dosen untuk mengajar lebih baik dan mahasiswa untuk belajar lebih efektif.
-            </p>
-        </div>
-
-        <div class="glass-card p-0 relative overflow-hidden min-h-[300px]">
-            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                 alt="Team working"
-                 class="w-full h-full object-cover opacity-60 hover:scale-105 transition-transform duration-700 grayscale hover:grayscale-0">
-            <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
-            <div class="absolute bottom-8 left-8">
-                <p class="text-white font-bold text-xl">Kolaborasi Tanpa Batas</p>
-                <p class="text-gray-400 text-sm mt-1">Antara Pengajar & Pelajar</p>
-            </div>
-        </div>
-    </div>
-
-    {# Stats Row #}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="glass-card p-6 text-center">
-            <h4 class="text-3xl font-black text-white mb-1">10+</h4>
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Modul Aktif</p>
-        </div>
-        <div class="glass-card p-6 text-center">
-            <h4 class="text-3xl font-black text-white mb-1">500+</h4>
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Mahasiswa</p>
-        </div>
-        <div class="glass-card p-6 text-center">
-            <h4 class="text-3xl font-black text-white mb-1">24/7</h4>
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Akses Materi</p>
-        </div>
-        <div class="glass-card p-6 text-center">
-            <h4 class="text-3xl font-black text-white mb-1">100%</h4>
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Gratis</p>
-        </div>
-    </div>
-</section>
-
 {# --- TEAM SECTION --- #}
-<section class="py-24 px-6 max-w-7xl mx-auto text-center">
+<section class="py-12 px-6 max-w-7xl mx-auto text-center">
     <span class="text-indigo-500 font-bold tracking-widest text-xs uppercase mb-2 block">Our Squad</span>
     <h2 class="text-3xl md:text-4xl font-bold text-white mb-16">Kenalan dengan Tim</h2>
 
-    <div class="flex flex-wrap justify-center gap-12 md:gap-20">
-        {# Member 1, 2, 3 (Code sama, hanya style container) #}
-        {# Member 1 #}
-        <div class="group relative w-full sm:w-auto">
+    <div class="flex flex-wrap justify-center gap-16">
+        
+        {# Member 1: Amelanov Destyawanda #}
+        <div class="group relative w-full sm:w-auto flex flex-col items-center">
             <div class="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-6">
                 <div class="absolute inset-0 bg-indigo-600 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
                 <div class="relative w-full h-full rounded-full p-1 border-2 border-dashed border-white/20 group-hover:border-indigo-500 group-hover:rotate-12 transition-all duration-500">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:-rotate-12" alt="Kevin">
+                    <img src="https://raw.githubusercontent.com/kevidn/e-learning/refs/heads/master/91766537-ef52-4100-8e8b-dc52786e795d.jpg" 
+                         class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:-rotate-12" 
+                         alt="Amelanov Destyawanda">
                 </div>
             </div>
-            <h4 class="text-white font-bold text-xl mb-1">Kevin H.</h4>
-            <p class="text-indigo-400 text-xs uppercase font-bold tracking-widest mb-4">Lead Developer</p>
+            <h4 class="text-white font-bold text-lg mb-1">Amelanov Destyawanda</h4>
+            <p class="text-indigo-400 text-xs font-mono font-medium tracking-wide mb-4">NIM: 24111814092</p>
+            
+            <div class="flex gap-4">
+                <a href="https://github.com/AmelanovDestyawanda" target="_blank" class="text-gray-500 hover:text-white transition-colors" title="GitHub">
+                    <i data-feather="github" class="w-5 h-5"></i>
+                </a>
+                <a href="https://www.instagram.com/meyaalav__?igsh=Y296OHV2NXFieDNx" target="_blank" class="text-gray-500 hover:text-pink-500 transition-colors" title="Instagram">
+                    <i data-feather="instagram" class="w-5 h-5"></i>
+                </a>
+            </div>
         </div>
 
-        {# Member 2 #}
-        <div class="group relative w-full sm:w-auto">
+        {# Member 2: Muhammad Hafizh Shafa Rabbani #}
+        <div class="group relative w-full sm:w-auto flex flex-col items-center">
+            <div class="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-6">
+                <div class="absolute inset-0 bg-indigo-600 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+                <div class="relative w-full h-full rounded-full p-1 border-2 border-dashed border-white/20 group-hover:border-indigo-500 group-hover:-rotate-12 transition-all duration-500">
+                    <img src="https://raw.githubusercontent.com/kevidn/e-learning/refs/heads/master/19b87453-3dc8-4fc1-8d53-a3984f4de7c9.jpg" 
+                         class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:rotate-12" 
+                         alt="Muhammad Hafizh Shafa Rabbani">
+                </div>
+            </div>
+            <h4 class="text-white font-bold text-lg mb-1">Muhammad Hafizh S. R.</h4>
+            <p class="text-indigo-400 text-xs font-mono font-medium tracking-wide mb-4">NIM: 24111814053</p>
+            
+            <div class="flex gap-4">
+                <a href="https://github.com/Apissr" target="_blank" class="text-gray-500 hover:text-white transition-colors" title="GitHub">
+                    <i data-feather="github" class="w-5 h-5"></i>
+                </a>
+                <a href="https://www.instagram.com/mhafizhsr_?igsh=MWdienpqcnVzenpuaA==" target="_blank" class="text-gray-500 hover:text-pink-500 transition-colors" title="Instagram">
+                    <i data-feather="instagram" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+
+        {# Member 3: Kevin Dzaky Hendratama #}
+        <div class="group relative w-full sm:w-auto flex flex-col items-center">
             <div class="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-6">
                 <div class="absolute inset-0 bg-indigo-600 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
                 <div class="relative w-full h-full rounded-full p-1 border-2 border-dashed border-white/20 group-hover:border-indigo-500 group-hover:rotate-12 transition-all duration-500">
-                    <img src="https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:-rotate-12" alt="Budi">
+                    <img src="https://raw.githubusercontent.com/kevidn/e-learning/refs/heads/master/0f0d1093-e439-401f-9568-cab8b2ab1e49.jpg" 
+                         class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:-rotate-12" 
+                         alt="Kevin Dzaky Hendratama">
                 </div>
             </div>
-            <h4 class="text-white font-bold text-xl mb-1">Budi S.</h4>
-            <p class="text-indigo-400 text-xs uppercase font-bold tracking-widest mb-4">Backend Eng.</p>
+            <h4 class="text-white font-bold text-lg mb-1">Kevin Dzaky Hendratama</h4>
+            <p class="text-indigo-400 text-xs font-mono font-medium tracking-wide mb-4">NIM: 24111814055</p>
+            
+            <div class="flex gap-4">
+                <a href="https://github.com/kevidn" target="_blank" class="text-gray-500 hover:text-white transition-colors" title="GitHub">
+                    <i data-feather="github" class="w-5 h-5"></i>
+                </a>
+                <a href="https://www.instagram.com/kevindzd?igsh=MW56MmdjOTloaDlpcw==" target="_blank" class="text-gray-500 hover:text-pink-500 transition-colors" title="Instagram">
+                    <i data-feather="instagram" class="w-5 h-5"></i>
+                </a>
+            </div>
         </div>
 
-        {# Member 3 #}
-        <div class="group relative w-full sm:w-auto">
-            <div class="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-6">
-                <div class="absolute inset-0 bg-purple-600 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                <div class="relative w-full h-full rounded-full p-1 border-2 border-dashed border-white/20 group-hover:border-purple-500 group-hover:-rotate-12 transition-all duration-500">
-                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" class="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:rotate-12" alt="Amelia">
-                </div>
-            </div>
-            <h4 class="text-white font-bold text-xl mb-1">Amelia P.</h4>
-            <p class="text-purple-400 text-xs uppercase font-bold tracking-widest mb-4">UI/UX Designer</p>
-        </div>
     </div>
 </section>
 
