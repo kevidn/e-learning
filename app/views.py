@@ -1918,3 +1918,6 @@ def hapus_course(request, course_id):
             messages.error(request, f"Gagal menghapus: {e}")
     
     return redirect('list_course')
+
+def about_us(request):
+    return render(request, 'about_us.html')

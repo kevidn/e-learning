@@ -75,4 +75,6 @@ urlpatterns = [
     path('api/notifications/', views.get_notifications_ajax, name='get_notifications_ajax'),
 
     path('catalog/', views.course_catalog, name='course_catalog'),
+    
+    path('about/', views.about_us, name='about_us'),
 ]
