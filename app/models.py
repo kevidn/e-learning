@@ -1,5 +1,6 @@
 from django.db import models
 import re
+from urllib.parse import urlparse, parse_qs
 
 # --- MODEL UTAMA (User, Role, Course) ---
 class Role(models.Model):
@@ -36,7 +37,7 @@ class Course(models.Model):
 # --- MODEL MODUL & KONTEN ---
 class Module(models.Model):
     module_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey(Course, models.DO_NOTHING, blank=True, null=True)
+    course = models.ForeignKey(Course, models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -63,18 +64,33 @@ class ModuleContent(models.Model):
     
     # Helper untuk template
     def get_embed_url(self):
-        if not self.video_url: 
-            return ""
+        if not self.video_url: return ""
         
-        # Regex untuk menangkap ID Youtube dari berbagai format (youtu.be, watch?v=, embed/, dll)
-        regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
-        match = re.search(regex, self.video_url)
-        
-        if match:
-            return f"https://www.youtube.com/embed/{match.group(1)}"
+        url = self.video_url.strip()
+        # Tambah https jika tidak ada
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+
+        try:
+            parsed = urlparse(url)
+            if 'youtube' in parsed.netloc or 'youtu.be' in parsed.netloc:
+                video_id = None
+                if 'youtu.be' in parsed.netloc:
+                    video_id = parsed.path.lstrip('/')
+                elif 'youtube.com' in parsed.netloc:
+                    if '/watch' in parsed.path:
+                        video_id = parse_qs(parsed.query).get('v', [None])[0]
+                    elif '/embed/' in parsed.path:
+                        video_id = parsed.path.split('/')[-1]
+                
+                if video_id:
+                    # Hapus parameter tambahan (misal time stamp) agar bersih
+                    clean_id = video_id.split('&')[0].split('?')[0]
+                    return f"https://www.youtube.com/embed/{clean_id}"
+        except:
+            pass
             
-        # Jika bukan youtube, kembalikan apa adanya (mungkin link mp4 biasa)
-        return self.video_url
+        return url
 
 # --- PERUBAHAN DI SINI (Quiz & Question) ---
 class Quiz(models.Model):

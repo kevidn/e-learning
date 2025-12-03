@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Kelola Modul | Modern Dark{% endblock %}
+{% block title %}Kelola Kelas | Modern Dark{% endblock %}
 {% block sidebar_menu %}
     {% include 'components/sidebar_dosen.html' %}
 {% endblock %}
@@ -19,20 +19,20 @@
                     </div>
                     Kembali ke Dashboard
                 </a>
-                <h1 class="text-4xl font-black text-white tracking-tight">Daftar Modul</h1>
-                <p class="text-gray-400 mt-2">Kelola dan pantau seluruh materi pembelajaran.</p>
+                <h1 class="text-4xl font-black text-white tracking-tight">Kelola Kelas</h1>
+                <p class="text-gray-400 mt-2">Buat dan atur mata kuliah yang Anda ajarkan.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 
-                {# FORM FILTER & SORT (AJAX) #}
+                {# FORM FILTER (AJAX) #}
                 <form id="filter-form" class="flex flex-1 gap-3">
                     <input type="hidden" name="page" id="page-input" value="1">
                     
                     {# SEARCH #}
                     <div class="relative flex-1 sm:w-64 group">
                         <i data-feather="search" class="absolute left-4 top-3.5 w-4 h-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
-                        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari judul modul..." 
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari nama kelas..." 
                                class="w-full bg-[#1A1D24] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:bg-[#20242C] focus:border-indigo-500/50 transition-all shadow-lg">
                     </div>
 
@@ -41,16 +41,16 @@
                         <select name="sort" class="w-full bg-[#1A1D24] border border-white/5 rounded-xl pl-4 pr-10 py-3 text-sm text-gray-300 appearance-none cursor-pointer focus:outline-none focus:bg-[#20242C] focus:border-indigo-500/50 transition-all shadow-lg">
                             <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
                             <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Terlama</option>
-                            <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>Judul (A-Z)</option>
-                            <option value="z-a" {% if sort_option == 'z-a' %}selected{% endif %}>Judul (Z-A)</option>
+                            <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>Nama (A-Z)</option>
+                            <option value="z-a" {% if sort_option == 'z-a' %}selected{% endif %}>Nama (Z-A)</option>
                         </select>
                         <i data-feather="chevron-down" class="absolute right-3.5 top-3.5 w-4 h-4 text-gray-500 pointer-events-none"></i>
                     </div>
                 </form>
 
                 {# BUTTON TAMBAH #}
-                <a href="{% url 'tambah_modul' %}" class="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all shadow-lg flex items-center justify-center flex-shrink-0 transform active:scale-95">
-                    <i data-feather="plus" class="w-4 h-4 mr-2"></i> Tambah
+                <a href="{% url 'tambah_course' %}" class="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all shadow-lg flex items-center justify-center flex-shrink-0 transform active:scale-95">
+                    <i data-feather="plus" class="w-4 h-4 mr-2"></i> Buat Baru
                 </a>
             </div>
         </div>
@@ -58,7 +58,7 @@
         {# --- CONTAINER UTAMA (AJAX LOADED) --- #}
         <div class="bg-[#1A1D24] rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl flex flex-col min-h-[500px] relative">
             
-            {# Loading Indicator (Overlay) #}
+            {# Loading Overlay #}
             <div id="loading-overlay" class="absolute inset-0 bg-[#1A1D24]/80 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
                 <div class="flex flex-col items-center">
                     <div class="w-10 h-10 border-4 border-white/10 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
@@ -66,8 +66,31 @@
                 </div>
             </div>
 
-            <div id="modul-content">
-                {% include 'components/modul_list_content.html' %}
+            <div id="course-content">
+                {% include 'components/course_list_content.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- MODAL DELETE GLOBAL --- #}
+<div id="deleteModal" class="fixed inset-0 z-[110] hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeDeleteModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-[#1A1D24] rounded-2xl w-full max-w-sm border border-white/10 shadow-2xl transform transition-all scale-100 p-6 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                <i data-feather="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2" id="deleteModalTitle">Konfirmasi Hapus</h3>
+            <p class="text-sm text-gray-400 mb-6" id="deleteModalDesc">Apakah Anda yakin ingin menghapus item ini?</p>
+            
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 rounded-xl bg-[#252A33] text-gray-300 font-bold text-sm hover:bg-white/10 transition-colors">
+                    Batal
+                </button>
+                <button id="confirmDeleteBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all">
+                    Ya, Hapus
+                </button>
             </div>
         </div>
     </div>
@@ -88,31 +111,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('filter-form');
         const inputs = form.querySelectorAll('input, select');
-        const contentContainer = document.getElementById('modul-content');
+        const contentContainer = document.getElementById('course-content');
         const loadingOverlay = document.getElementById('loading-overlay');
         const pageInput = document.getElementById('page-input');
         let timeout = null;
 
-        // Fungsi Global untuk ganti halaman (dipanggil dari pagination button)
+        // Fungsi Global ganti halaman
         window.changePage = function(pageNum) {
             pageInput.value = pageNum;
             fetchData();
-            // Scroll smooth ke atas tabel jika posisi di bawah
             const tableTop = contentContainer.getBoundingClientRect().top + window.pageYOffset - 100;
             if(window.scrollY > tableTop) window.scrollTo({ top: tableTop, behavior: 'smooth' });
         }
 
-        // Fungsi Global Reset Filter
-        window.resetFilter = function() {
-            form.reset();
-            pageInput.value = 1;
-            fetchData();
-        }
-
         function fetchData() {
-            // Tampilkan Loading
             loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
-            
             const url = new URL(window.location.href);
             const params = new URLSearchParams(new FormData(form));
             
@@ -123,36 +136,51 @@
             .then(html => {
                 contentContainer.innerHTML = html;
                 feather.replace();
-                
-                // Update URL Browser tanpa reload
                 window.history.pushState({}, '', `${url.pathname}?${params.toString()}`);
-                
-                // Sembunyikan Loading dengan delay dikit biar smooth
-                setTimeout(() => {
-                    loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
-                }, 200);
-            })
-            .catch(err => {
-                console.error('Error fetching data:', err);
-                loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => loadingOverlay.classList.add('opacity-0', 'pointer-events-none'), 200);
             });
         }
 
-        // Event Listener untuk Input Search & Sort
         inputs.forEach(input => {
             input.addEventListener('input', function() {
-                // Reset ke halaman 1 setiap kali filter berubah (kecuali hidden page input itu sendiri)
                 if (this.name !== 'page') pageInput.value = 1;
-
-                // Debounce untuk text input agar tidak spam request
                 if (this.type === 'text') {
                     clearTimeout(timeout);
                     timeout = setTimeout(fetchData, 400); 
                 } else {
-                    fetchData(); // Select dropdown langsung fetch
+                    fetchData();
                 }
             });
         });
     });
+
+    // --- MODAL DELETE LOGIC ---
+    let deleteCallback = null;
+
+    function openDeleteModal(callback, title, desc) {
+        deleteCallback = callback;
+        document.getElementById('deleteModalTitle').innerText = title;
+        document.getElementById('deleteModalDesc').innerText = desc;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        deleteCallback = null;
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteCallback) deleteCallback();
+        closeDeleteModal();
+    });
+
+    // Trigger Hapus Course (Global Function agar bisa dipanggil dari AJAX content)
+    window.triggerDeleteCourse = function(courseId) {
+        openDeleteModal(
+            () => document.getElementById('form-hapus-course-' + courseId).submit(),
+            "Hapus Kelas?",
+            "Semua modul, tugas, dan data siswa di kelas ini akan dihapus permanen."
+        );
+    }
 </script>
 {% endblock %}

@@ -11,13 +11,13 @@
                 <span class="relative z-10">Dashboard</span>
             </a>
 
-            {# 2. MODUL AJAR (Aktif di list_modul, tambah_modul, edit_modul, detail_modul_dosen) #}
-            <a href="{% url 'list_modul' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if 'modul' in request.path %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
-                {% if 'modul' in request.path %}
+            {# 2. KELOLA KELAS #}
+            <a href="{% url 'list_course' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl {% if 'course' in request.path %}bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 relative overflow-hidden{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %} transition-all">
+                {% if 'course' in request.path %}
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 {% endif %}
-                <i data-feather="layers" class="w-5 h-5 relative z-10"></i>
-                <span class="relative z-10">Kelola Modul</span>
+                <i data-feather="monitor" class="w-5 h-5 relative z-10"></i>
+                <span class="relative z-10">Kelola Kelas</span>
             </a>
 
             {# 3. DISKUSI #}

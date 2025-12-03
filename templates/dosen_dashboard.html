@@ -158,7 +158,7 @@
 
         <div class="space-y-4">
             <div class="flex justify-between items-center px-1 mb-2">
-                <h4 class="font-bold text-gray-300 flex items-center gap-2">Mata Kuliah <span class="bg-white/10 text-white px-2 py-0.5 rounded-full text-xs">{{ total_courses }}</span></h4>
+                <h4 class="font-bold text-gray-300 flex items-center gap-2">Course<span class="bg-white/10 text-white px-2 py-0.5 rounded-full text-xs">{{ total_courses }}</span></h4>
                 <a href="{% url 'tambah_course' %}" class="text-gray-500 hover:text-white"><i data-feather="plus" class="w-5 h-5"></i></a>
             </div>
             {% for course in courses %}
