@@ -7,41 +7,42 @@
 {% block navbar_actions %}{% endblock %}
 
 {% block sidebar_menu %}
-    {% if request.session.role_name == 'Dosen' %}
-        {% include 'components/sidebar_dosen.html' %}
-    {% else %}
-        {% include 'components/sidebar_mahasiswa.html' %}
-    {% endif %}
+{% if request.session.role_name == 'Dosen' %}
+{% include 'components/sidebar_dosen.html' %}
+{% else %}
+{% include 'components/sidebar_mahasiswa.html' %}
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2 pointer-events-none"></div>
+{# Toast container dengan max-width agar tidak offscreen di HP #}
+<div id="toast-container" class="fixed top-5 right-5 left-5 md:left-auto md:w-auto z-[100] space-y-2 pointer-events-none flex flex-col items-end"></div>
 
-<div class="min-h-full bg-[#0F1115] p-6 lg:p-10">
-    <div class="max-w-5xl mx-auto space-y-8">
+<div class="min-h-full bg-[#0F1115] p-4 md:p-6 lg:p-10 pb-20">
+    <div class="max-w-5xl mx-auto space-y-6 md:space-y-8">
 
         {# Kartu Header Profil #}
-        <div class="bg-[#1A1D24] rounded-[2.5rem] border border-white/5 p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-2xl">
+        <div class="bg-[#1A1D24] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 relative overflow-hidden shadow-2xl">
             <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-            
-            <div class="relative group">
-                <div class="w-32 h-32 rounded-full p-1.5 border-2 border-dashed border-indigo-500/50 relative z-10">
-                    <img id="avatar-preview" 
-                         src="https://ui-avatars.com/api/?name={{ user.name|default:'User' }}&background=1A1D24&color=ffffff&size=256&bold=true" 
+
+            <div class="relative group flex-shrink-0">
+                <div class="w-24 h-24 md:w-32 md:h-32 rounded-full p-1.5 border-2 border-dashed border-indigo-500/50 relative z-10">
+                    <img id="avatar-preview"
+                         src="https://ui-avatars.com/api/?name={{ user.name|default:'User' }}&background=1A1D24&color=ffffff&size=256&bold=true"
                          class="w-full h-full rounded-full object-cover shadow-lg bg-[#252A33]" alt="Profile">
                 </div>
             </div>
 
-            <div class="text-center md:text-left flex-1 relative z-10">
-                <h2 class="text-4xl font-black text-white mb-2 tracking-tight" id="display-name">
+            <div class="text-center md:text-left flex-1 relative z-10 w-full">
+                <h2 class="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight break-words" id="display-name">
                     {{ user.name }}
                 </h2>
-                
-                <p class="text-gray-400 font-medium flex items-center justify-center md:justify-start text-sm mb-6">
-                    <i data-feather="mail" class="w-4 h-4 mr-2"></i> 
+
+                <p class="text-gray-400 font-medium flex items-center justify-center md:justify-start text-sm mb-6 break-all">
+                    <i data-feather="mail" class="w-4 h-4 mr-2 flex-shrink-0"></i>
                     {{ user.email }}
                 </p>
-                
+
                 <div class="flex flex-wrap gap-3 justify-center md:justify-start">
                     <span class="px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-widest border border-indigo-500/20">
                         {{ request.session.role_name|default:"User" }}
@@ -53,21 +54,21 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+
             {# Form Info #}
-            <div class="bg-[#1A1D24] rounded-[2rem] border border-white/5 p-8 h-full shadow-lg">
-                <div class="flex items-center space-x-4 mb-8 border-b border-white/5 pb-6">
+            <div class="bg-[#1A1D24] rounded-[2rem] border border-white/5 p-6 md:p-8 h-full shadow-lg">
+                <div class="flex items-center space-x-4 mb-6 md:mb-8 border-b border-white/5 pb-6">
                     <div class="p-3 bg-[#252A33] rounded-2xl text-indigo-400 border border-white/5">
                         <i data-feather="edit-2" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white">Informasi Pribadi</h3>
+                    <h3 class="text-lg md:text-xl font-bold text-white">Informasi Pribadi</h3>
                 </div>
 
                 <form id="profile-form" class="space-y-6">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update_info">
-                    
+
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nama Lengkap</label>
                         <input type="text" name="username" value="{{ user.name }}" required
@@ -82,7 +83,7 @@
                     </div>
 
                     <div class="pt-6 flex justify-end">
-                        <button type="submit" id="btn-save-info" class="px-8 py-3.5 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all shadow-lg hover:-translate-y-0.5 flex items-center">
+                        <button type="submit" id="btn-save-info" class="w-full md:w-auto justify-center px-8 py-3.5 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all shadow-lg hover:-translate-y-0.5 flex items-center">
                             <i data-feather="save" class="w-4 h-4 mr-2"></i> Simpan
                         </button>
                     </div>
@@ -90,12 +91,12 @@
             </div>
 
             {# Form Password #}
-            <div class="bg-[#1A1D24] rounded-[2rem] border border-white/5 p-8 h-full shadow-lg">
-                <div class="flex items-center space-x-4 mb-8 border-b border-white/5 pb-6">
+            <div class="bg-[#1A1D24] rounded-[2rem] border border-white/5 p-6 md:p-8 h-full shadow-lg">
+                <div class="flex items-center space-x-4 mb-6 md:mb-8 border-b border-white/5 pb-6">
                     <div class="p-3 bg-[#252A33] rounded-2xl text-red-400 border border-white/5">
                         <i data-feather="lock" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white">Keamanan</h3>
+                    <h3 class="text-lg md:text-xl font-bold text-white">Keamanan</h3>
                 </div>
 
                 <form id="password-form" class="space-y-6">
@@ -124,7 +125,7 @@
                     </div>
 
                     <div class="pt-6 flex justify-end">
-                        <button type="submit" id="btn-save-pass" class="px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 transition-all hover:-translate-y-0.5 flex items-center">
+                        <button type="submit" id="btn-save-pass" class="w-full md:w-auto justify-center px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 transition-all hover:-translate-y-0.5 flex items-center">
                             <i data-feather="shield" class="w-4 h-4 mr-2"></i> Update
                         </button>
                     </div>
@@ -147,14 +148,15 @@
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-        toast.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transform transition-all duration-300 translate-x-full pointer-events-auto min-w-[300px] border border-white/10 font-medium`;
-        toast.innerHTML = `<i data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i><span>${message}</span>`;
+        // Tambahkan max-w-full untuk mobile
+        toast.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transform transition-all duration-300 translate-x-full pointer-events-auto w-full md:w-auto md:min-w-[300px] border border-white/10 font-medium`;
+        toast.innerHTML = `<i data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5 flex-shrink-0"></i><span>${message}</span>`;
         container.appendChild(toast); feather.replace();
         requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
         setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
-    // Logic Update Profile JS tetap sama seperti sebelumnya
+    // Logic Update Profile JS tetap sama
     document.getElementById('profile-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-save-info'); const originalText = btn.innerHTML;
@@ -169,7 +171,7 @@
                 document.getElementById('display-name').innerText = newName;
                 document.getElementById('avatar-preview').src = `https://ui-avatars.com/api/?name=${newName}&background=1A1D24&color=ffffff&size=256&bold=true`;
             } else showToast(data.message, 'error');
-        } catch(e) { showToast('Koneksi error', 'error'); } finally { btn.disabled = false; btn.innerHTML = originalText; }
+        } catch(e) { showToast('Koneksi error', 'error'); } finally { btn.disabled = false; btn.innerHTML = originalText; feather.replace(); }
     });
 
     document.getElementById('password-form').addEventListener('submit', async function(e) {
@@ -179,9 +181,9 @@
         try {
             const res = await fetch("{% url 'update_profile_ajax' %}", { method:'POST', body:new FormData(this), headers:{'X-Requested-With':'XMLHttpRequest'} });
             const data = await res.json();
-            if (data.status === 'success') { showToast(data.message, 'success'); this.reset(); } 
+            if (data.status === 'success') { showToast(data.message, 'success'); this.reset(); }
             else showToast(data.message, 'error');
-        } catch(e) { showToast('Koneksi error', 'error'); } finally { btn.disabled = false; btn.innerHTML = originalText; }
+        } catch(e) { showToast('Koneksi error', 'error'); } finally { btn.disabled = false; btn.innerHTML = originalText; feather.replace(); }
     });
 </script>
 {% endblock %}

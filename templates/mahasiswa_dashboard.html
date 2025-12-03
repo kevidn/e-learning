@@ -3,29 +3,67 @@
 
 {% block title %}Dashboard Mahasiswa | Modern Dark{% endblock %}
 
-{# --- SIDEBAR MANUAL (TETAP DIPERTAHANKAN) --- #}
+{# --- SIDEBAR MANUAL --- #}
 {% block sidebar_menu %}
 {% include 'components/sidebar_mahasiswa.html' %}
 {% endblock %}
 
 {% block content %}
-<div class="min-h-full bg-[#0F1115] p-6 lg:p-8"> 
-    
+<style>
+    /* Override Sidebar untuk Mobile (Off-Canvas) */
+    @media (max-width: 1024px) {
+        aside {
+            position: fixed !important;
+            top: 0; left: 0; bottom: 0;
+            z-index: 9999 !important; /* Prioritas Tertinggi */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            background-color: #1A1D24 !important;
+            width: 280px !important;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5); /* Bayangan agar sidebar tegas */
+        }
+        aside.open {
+            transform: translateX(0);
+        }
+        /* Backdrop gelap tanpa blur agar lebih ringan & bersih */
+        #mobile-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            z-index: 9998 !important; /* Tepat di bawah sidebar */
+            background: rgba(0,0,0,0.6);
+        }
+        #mobile-backdrop.show { display: block; }
+    }
+</style>
+
+{# Backdrop untuk menutup sidebar di mobile #}
+<div id="mobile-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="min-h-full bg-[#0F1115] p-4 md:p-6 lg:p-8">
+
     {# --- HEADER --- #}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div>
-            <h2 class="text-3xl font-bold text-white tracking-tight">Dashboard</h2>
-            <p class="text-gray-400 text-sm mt-1">Welcome back, {{ nama_mahasiswa }}!</p>
-        </div>
 
         <div class="flex items-center gap-4">
+            {# Tombol Hamburger (Mobile Only) #}
+            <button onclick="toggleSidebar()" class="lg:hidden p-2.5 bg-[#1A1D24] text-white rounded-xl border border-white/10 hover:bg-[#252A33] transition-colors">
+                <i data-feather="menu" class="w-6 h-6"></i>
+            </button>
+
+            <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Dashboard</h2>
+                <p class="text-gray-400 text-sm mt-1">Welcome back, {{ nama_mahasiswa }}!</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 self-end md:self-auto">
             {# Notifikasi #}
             <div class="relative" id="notif-container">
                 <button onclick="toggleNotif()" class="p-3 bg-[#1A1D24] rounded-full text-gray-400 hover:text-white hover:bg-[#252A33] transition-all border border-white/5 shadow-md group">
                     <i data-feather="bell" class="w-5 h-5"></i>
                     <span id="notif-badge" class="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-[#1A1D24] hidden animate-pulse"></span>
                 </button>
-                <div id="notif-dropdown" class="absolute right-0 mt-4 w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-50">
+                <div id="notif-dropdown" class="absolute right-0 mt-4 w-72 md:w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-[100]">
                     <div class="px-5 py-4 border-b border-white/5 bg-[#20242C] flex justify-between items-center">
                         <h3 class="text-sm font-bold text-white">Notifikasi</h3>
                     </div>
@@ -48,23 +86,23 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-12 gap-8">
+    <div class="grid grid-cols-12 gap-6 lg:gap-8">
 
         {# --- KOLOM TENGAH (UTAMA) --- #}
         <div class="col-span-12 xl:col-span-8 space-y-8">
-            
+
             {# 1. HERO STATS #}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-[2rem] text-white relative overflow-hidden shadow-xl shadow-indigo-900/30 group">
-                     <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+                <div class="md:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-6 md:p-8 rounded-[2rem] text-white relative overflow-hidden shadow-xl shadow-indigo-900/30 group">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
                     <i data-feather="zap" class="absolute bottom-4 right-4 w-24 h-24 text-white/10 group-hover:scale-110 transition-transform duration-500"></i>
 
                     <div class="relative z-10">
                         <p class="text-indigo-100 text-sm font-medium mb-2 flex items-center">
                             <i data-feather="activity" class="w-4 h-4 mr-2"></i> Learning Progress
                         </p>
-                        <h3 class="text-5xl font-black mb-4">{{ stats.points }} <span class="text-2xl font-bold text-indigo-200">XP</span></h3>
-                        
+                        <h3 class="text-4xl md:text-5xl font-black mb-4">{{ stats.points }} <span class="text-2xl font-bold text-indigo-200">XP</span></h3>
+
                         <div class="flex flex-wrap gap-3">
                             <div class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm backdrop-blur-md border border-white/10">
                                 <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -76,7 +114,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="grid grid-rows-3 gap-4">
                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -87,14 +125,14 @@
                     </div>
                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                             <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center"><i data-feather="check-square" class="w-5 h-5"></i></div>
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center"><i data-feather="check-square" class="w-5 h-5"></i></div>
                             <span class="text-gray-400 text-sm font-medium">Tugas Submit</span>
                         </div>
                         <span class="text-white text-xl font-bold">{{ stats.assignments_done }}</span>
                     </div>
-                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                             <div class="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center"><i data-feather="bar-chart-2" class="w-5 h-5"></i></div>
+                            <div class="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center"><i data-feather="bar-chart-2" class="w-5 h-5"></i></div>
                             <span class="text-gray-400 text-sm font-medium">Rata-rata Nilai</span>
                         </div>
                         <span class="text-white text-xl font-bold">{{ stats.avg_score }}</span>
@@ -115,7 +153,7 @@
                                 <div class="w-14 h-14 rounded-2xl bg-indigo-600/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                                     <i data-feather="book" class="w-7 h-7"></i>
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <h4 class="font-bold text-white text-lg leading-tight line-clamp-1" title="{{ item.course.course_name }}">{{ item.course.course_name }}</h4>
                                     <span class="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-md bg-[#252A33] text-[10px] font-bold text-indigo-300 uppercase tracking-wider border border-indigo-500/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse mr-1.5"></span> Active
@@ -133,7 +171,7 @@
                             </div>
                             <div class="flex justify-between items-center pt-4 border-t border-white/5">
                                 <span class="text-xs font-medium text-gray-400 flex items-center">
-                                    <i data-feather="layers" class="w-4 h-4 mr-1.5 text-gray-600"></i> 
+                                    <i data-feather="layers" class="w-4 h-4 mr-1.5 text-gray-600"></i>
                                     {{ item.completed_count }} / {{ item.total_modules }} Modul
                                 </span>
                                 {% if item.first_module_id %}
@@ -159,18 +197,18 @@
 
             {# 3. REKOMENDASI KELAS (FILTER + AJAX CONTENT) #}
             <div>
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 mb-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-8 mb-6">
                     <h3 class="text-xl font-bold text-white mb-0">Rekomendasi Kelas</h3>
-                    
+
                     {# Form Filter untuk AJAX #}
-                    <form id="filter-form" class="flex gap-3 w-full md:w-auto">
-                         <input type="hidden" name="page" id="page-input" value="1">
-                         <div class="relative flex-1 md:w-64 group">
+                    <form id="filter-form" class="flex gap-3 w-full sm:w-auto">
+                        <input type="hidden" name="page" id="page-input" value="1">
+                        <div class="relative flex-1 sm:w-64 group">
                             <i data-feather="search" class="absolute left-4 top-3 text-gray-500 w-4 h-4"></i>
-                            <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi..." 
+                            <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi..."
                                    class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600 focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 transition-all outline-none">
                         </div>
-                         <div class="relative w-40">
+                        <div class="relative w-40 hidden sm:block">
                             <select name="sort" class="w-full pl-4 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
                                 <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
                                 <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
@@ -185,14 +223,14 @@
                     {% include 'components/dashboard_content.html' %}
                 </div>
             </div>
-            
+
         </div>
 
         {# --- KOLOM KANAN (SIDEBAR) --- #}
         <div class="col-span-12 xl:col-span-4 space-y-6">
             {# DEADLINE CARD #}
             <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
-                 <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <div class="flex justify-between items-center mb-6 relative z-10">
                     <h4 class="font-bold text-white text-lg flex items-center">
                         <span class="bg-red-500/20 text-red-500 p-2 rounded-lg mr-3"><i data-feather="clock" class="w-5 h-5"></i></span> Deadline
@@ -263,7 +301,17 @@
 {% block extra_js %}
 <script>
     feather.replace();
-    
+
+    // --- SCRIPT SIDEBAR MOBILE ---
+    function toggleSidebar() {
+        const sidebar = document.querySelector('aside');
+        const backdrop = document.getElementById('mobile-backdrop');
+        if (sidebar) {
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('show');
+        }
+    }
+
     // --- SCRIPT NOTIFIKASI ---
     function toggleNotif() {
         const dropdown = document.getElementById('notif-dropdown');
@@ -281,7 +329,7 @@
                 const list = document.getElementById('notif-list');
                 const badge = document.getElementById('notif-badge');
                 if(data.count > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
-                
+
                 if (data.notifications.length === 0) {
                     list.innerHTML = `<div class="p-6 text-center text-gray-500 text-xs">Tidak ada notifikasi baru.</div>`;
                 } else {
@@ -311,20 +359,20 @@
             contentContainer.style.opacity = '0.5';
             const url = new URL(window.location.href);
             const params = new URLSearchParams(new FormData(form));
-            
+
             fetch(`${url.pathname}?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(res => res.text()).then(html => {
-                    contentContainer.innerHTML = html;
-                    feather.replace();
-                    contentContainer.style.opacity = '1';
-                });
+                contentContainer.innerHTML = html;
+                feather.replace();
+                contentContainer.style.opacity = '1';
+            });
         };
 
         inputs.forEach(input => {
             input.addEventListener('input', () => {
                 // Reset page ke 1 jika filter berubah (kecuali hidden page input)
                 if(input.name !== 'page') document.getElementById('page-input').value = 1;
-                
+
                 if(input.type === 'text') { clearTimeout(timeout); timeout = setTimeout(window.fetchContent, 300); }
                 else window.fetchContent();
             });
