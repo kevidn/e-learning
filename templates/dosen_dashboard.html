@@ -4,47 +4,82 @@
 {% block title %}Dashboard Dosen | Khacademy{% endblock %}
 
 {% block sidebar_menu %}
-    {% include 'components/sidebar_dosen.html' %}
+{% include 'components/sidebar_dosen.html' %}
 {% endblock %}
 
 {% block content %}
 <style>
-    aside { background-color: #1A1D24 !important; border-right: 1px solid #2A2E37 !important; }
-    aside .text-gray-800 { color: #ffffff !important; }
-    aside .text-gray-600 { color: #9ca3af !important; }
-    aside .border-gray-200 { border-color: #2A2E37 !important; }
-    aside .bg-gray-50 { background-color: #1A1D24 !important; }
-    
+    /* Style Override untuk Sidebar Base.html agar Responsive */
+    @media (max-width: 1024px) {
+        aside {
+            position: fixed !important;
+            top: 0; left: 0; bottom: 0;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            background-color: #1A1D24 !important;
+            width: 280px !important;
+        }
+        aside.open {
+            transform: translateX(0);
+        }
+        /* Backdrop gelap saat sidebar terbuka di mobile */
+        #mobile-backdrop {
+            display: none;
+            position: fixed; inset: 0; z-index: 40;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        #mobile-backdrop.show { display: block; }
+    }
+
+    /* Styling Dashboard Khusus */
     .muse-card {
         background-color: #1A1D24; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease;
     }
     .muse-card:hover { transform: translate(-2px, -2px); border-color: rgba(255, 255, 255, 0.3); }
     .muse-search { background-color: #1A1D24; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 9999px; color: white; }
-    .muse-btn { background-color: #ffffff; color: #000000; border-radius: 9999px; font-weight: 600; border: 1px solid #ffffff; }
-    .muse-btn-outline { background-color: transparent; color: #e5e5e5; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9999px; font-weight: 600; }
+    .muse-btn { background-color: #ffffff; color: #000000; border-radius: 9999px; font-weight: 600; border: 1px solid #ffffff; white-space: nowrap; }
 </style>
 
-<div class="min-h-full p-6 lg:p-10 font-sans text-gray-200">
-    
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-        
-        <div class="relative w-full md:w-96 group">
-            <div class="muse-search flex items-center px-4 py-3 transition-all">
-                <i data-feather="search" class="text-gray-400 w-5 h-5 mr-3"></i>
-                <input type="text" placeholder="Search modules..." class="w-full bg-transparent border-none text-sm font-medium focus:ring-0 outline-none placeholder-gray-500 text-white">
+{# Backdrop untuk Mobile Menu #}
+<div id="mobile-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="min-h-full p-4 md:p-6 lg:p-10 font-sans text-gray-200">
+
+    {# --- HEADER SECTION --- #}
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+
+        {# Wrapper Search & Toggle #}
+        <div class="flex items-center gap-4 w-full lg:w-auto">
+
+            {# Tombol Hamburger (Mobile Only) #}
+            <button onclick="toggleSidebar()" class="lg:hidden p-2.5 bg-[#1A1D24] text-white rounded-full border border-white/10 hover:bg-[#252A33]">
+                <i data-feather="menu" class="w-5 h-5"></i>
+            </button>
+
+            {# Search Bar #}
+            <div class="relative w-full lg:w-96 group">
+                <div class="muse-search flex items-center px-4 py-3 transition-all">
+                    <i data-feather="search" class="text-gray-400 w-5 h-5 mr-3 flex-shrink-0"></i>
+                    <input type="text" placeholder="Cari modul atau materi..." class="w-full bg-transparent border-none text-sm font-medium focus:ring-0 outline-none placeholder-gray-500 text-white">
+                </div>
             </div>
         </div>
 
-        <div class="flex items-center gap-6">
-            
+        {# User Info & Notif #}
+        <div class="flex items-center justify-between w-full lg:w-auto gap-4 lg:gap-6">
+
+            {# Notifikasi #}
             <div class="relative" id="notif-container">
                 <button onclick="toggleNotif()" class="relative p-3 bg-[#1A1D24] rounded-full text-gray-400 hover:text-white hover:bg-[#252A33] transition-all border border-white/10 shadow-md group">
                     <i data-feather="bell" class="w-5 h-5"></i>
                     <span id="notif-badge" class="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-[#1A1D24] hidden animate-pulse"></span>
                 </button>
 
-                <div id="notif-dropdown" class="absolute right-0 mt-4 w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-50">
+                {# Dropdown Notif #}
+                <div id="notif-dropdown" class="absolute right-0 mt-4 w-72 md:w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-50">
                     <div class="px-5 py-4 border-b border-white/5 bg-[#20242C] flex justify-between items-center">
                         <h3 class="text-sm font-bold text-white">Notifikasi</h3>
                         <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">Terbaru</span>
@@ -55,68 +90,76 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 pl-6 border-l border-white/10">
+            <div class="flex items-center gap-4 lg:pl-6 lg:border-l border-white/10">
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-bold text-white leading-none">{{ nama_dosen }}</p>
                     <p class="text-xs text-gray-400 font-medium mt-1">Lecturer</p>
                 </div>
-                <div class="w-12 h-12 rounded-full border border-white/20 overflow-hidden shadow-lg">
+                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/20 overflow-hidden shadow-lg flex-shrink-0">
                     <img src="https://ui-avatars.com/api/?name={{ nama_dosen }}&background=222&color=fff&bold=true" class="w-full h-full object-cover">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-10">
+    {# --- PANEL KONTROL TITLE --- #}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 md:mb-10">
         <div>
             <p class="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Dashboard / Overview</p>
-            <h1 class="text-5xl font-black text-white tracking-tight">Panel Kontrol</h1>
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight">Panel Kontrol</h1>
         </div>
-        <div class="flex gap-3">
-            <a href="{% url 'tambah_modul' %}" class="muse-btn px-6 py-2.5 flex items-center gap-2 text-sm">
+        <div class="flex gap-3 w-full sm:w-auto">
+            <a href="{% url 'tambah_modul' %}" class="muse-btn px-6 py-3 flex items-center justify-center gap-2 text-sm w-full sm:w-auto shadow-lg hover:bg-gray-200 transition-colors">
                 <i data-feather="plus" class="w-4 h-4"></i> Tambah Modul
             </a>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    {# --- STATS CARDS --- #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+
+        {# Card Mahasiswa #}
         <div class="muse-card p-6 flex flex-col justify-between h-40">
             <div class="flex justify-between items-start">
                 <h3 class="font-bold text-lg text-white">Mahasiswa</h3>
-                <button class="text-gray-400 hover:text-white"><i data-feather="users"></i></button>
+                <div class="text-gray-400"><i data-feather="users" class="w-5 h-5"></i></div>
             </div>
             <div class="flex items-end justify-between">
-                <div class="flex -space-x-3">
+                <div class="flex -space-x-3 overflow-hidden">
                     {% for student in latest_students %}
-                        <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-[#252A33] overflow-hidden" title="{{ student.name }}">
-                            <img src="https://ui-avatars.com/api/?name={{ student.name }}&background=random&color=fff&size=64&bold=true" class="w-full h-full object-cover">
-                        </div>
+                    <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-[#252A33] overflow-hidden" title="{{ student.name }}">
+                        <img src="https://ui-avatars.com/api/?name={{ student.name }}&background=random&color=fff&size=64&bold=true" class="w-full h-full object-cover">
+                    </div>
                     {% empty %}
-                        <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-[#252A33] flex items-center justify-center text-[10px] text-gray-500">0</div>
+                    <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-[#252A33] flex items-center justify-center text-[10px] text-gray-500">0</div>
                     {% endfor %}
-                    
+
                     {% if total_students > 3 %}
-                        <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-white text-black flex items-center justify-center text-xs font-bold z-10">+{{ total_students|add:"-3" }}</div>
+                    <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-white text-black flex items-center justify-center text-xs font-bold z-10">+{{ total_students|add:"-3" }}</div>
                     {% else %}
-                         <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-white text-black flex items-center justify-center text-xs font-bold z-10">{{ total_students }}</div>
+                    <div class="w-10 h-10 rounded-full border-2 border-[#1A1D24] bg-white text-black flex items-center justify-center text-xs font-bold z-10">{{ total_students }}</div>
                     {% endif %}
                 </div>
             </div>
         </div>
+
+        {# Card Modul #}
         <div class="muse-card p-6 flex flex-col justify-between h-40">
             <div class="flex justify-between items-start">
                 <h3 class="font-bold text-lg text-white">Total Modul</h3>
-                <button class="text-gray-400 hover:text-white"><i data-feather="layers"></i></button>
+                <div class="text-gray-400"><i data-feather="layers" class="w-5 h-5"></i></div>
             </div>
             <div class="flex items-baseline gap-2">
-                <span class="text-5xl font-black text-white">{{ total_modules }}</span>
+                <span class="text-4xl md:text-5xl font-black text-white">{{ total_modules }}</span>
                 <span class="text-gray-400 font-medium">Unit</span>
             </div>
         </div>
+
+        {# Card Nilai #}
         <div class="muse-card p-6 flex flex-col justify-between h-40 relative overflow-hidden">
             <div class="flex justify-between items-start relative z-10">
                 <h3 class="font-bold text-lg text-white">Rata-rata Nilai</h3>
-                <button class="text-gray-400 hover:text-white"><i data-feather="bar-chart-2"></i></button>
+                <div class="text-gray-400"><i data-feather="bar-chart-2" class="w-5 h-5"></i></div>
             </div>
             <div class="relative z-10">
                 <span class="text-4xl font-black text-white">{{ avg_score }}</span>
@@ -126,11 +169,14 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {# --- MAIN GRID (MODUL & COURSE) --- #}
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+        {# List Modul Terbaru #}
         <div class="space-y-4">
             <div class="flex justify-between items-center px-1 mb-2">
                 <h4 class="font-bold text-gray-300 flex items-center gap-2">Modul Terbaru <span class="bg-white/10 text-white px-2 py-0.5 rounded-full text-xs">{{ modules.count }}</span></h4>
-                <a href="{% url 'tambah_modul' %}" class="text-gray-500 hover:text-white"><i data-feather="plus" class="w-5 h-5"></i></a>
+                <a href="{% url 'list_modul' %}" class="text-gray-500 hover:text-white transition-colors" title="Lihat Semua"><i data-feather="arrow-right" class="w-5 h-5"></i></a>
             </div>
             {% for module in modules|slice:":3" %}
             <div class="muse-card p-5 group cursor-pointer hover:border-white/40 transition-colors">
@@ -156,10 +202,11 @@
             {% endfor %}
         </div>
 
+        {# List Course (Kelas) #}
         <div class="space-y-4">
             <div class="flex justify-between items-center px-1 mb-2">
                 <h4 class="font-bold text-gray-300 flex items-center gap-2">Course<span class="bg-white/10 text-white px-2 py-0.5 rounded-full text-xs">{{ total_courses }}</span></h4>
-                <a href="{% url 'tambah_course' %}" class="text-gray-500 hover:text-white"><i data-feather="plus" class="w-5 h-5"></i></a>
+                <a href="{% url 'list_course' %}" class="text-gray-500 hover:text-white transition-colors" title="Kelola Kelas"><i data-feather="settings" class="w-5 h-5"></i></a>
             </div>
             {% for course in courses %}
             <div class="muse-card p-5 relative group hover:border-white/30 transition-all">
@@ -170,14 +217,14 @@
                 <div class="flex items-center justify-between">
                     <div class="flex -space-x-2.5">
                         {% for student in course.students %}
-                            <div class="w-9 h-9 rounded-full border-2 border-[#1A1D24] bg-[#252A33] overflow-hidden relative group/avatar cursor-help">
-                                <img src="https://ui-avatars.com/api/?name={{ student.name }}&background=random&color=fff&size=64&bold=true" class="w-full h-full object-cover">
-                            </div>
+                        <div class="w-9 h-9 rounded-full border-2 border-[#1A1D24] bg-[#252A33] overflow-hidden relative group/avatar cursor-help">
+                            <img src="https://ui-avatars.com/api/?name={{ student.name }}&background=random&color=fff&size=64&bold=true" class="w-full h-full object-cover">
+                        </div>
                         {% empty %}
-                            <span class="text-xs text-gray-600 italic pl-1">Belum ada siswa</span>
+                        <span class="text-xs text-gray-600 italic pl-1">Belum ada siswa</span>
                         {% endfor %}
                         {% if course.student_count > 3 %}
-                            <div class="w-9 h-9 rounded-full border-2 border-[#1A1D24] bg-[#252A33] text-gray-300 flex items-center justify-center text-[10px] font-bold">+{{ course.student_count|add:"-3" }}</div>
+                        <div class="w-9 h-9 rounded-full border-2 border-[#1A1D24] bg-[#252A33] text-gray-300 flex items-center justify-center text-[10px] font-bold">+{{ course.student_count|add:"-3" }}</div>
                         {% endif %}
                     </div>
                     <div class="flex items-center gap-3">
@@ -189,6 +236,7 @@
             {% endfor %}
         </div>
 
+        {# Aksi Cepat & Tugas #}
         <div class="space-y-4">
             <div class="flex justify-between items-center px-1 mb-2">
                 <h4 class="font-bold text-gray-300">Aksi Cepat</h4>
@@ -199,14 +247,15 @@
                 <p class="text-white text-sm mb-6 leading-relaxed">Tambahkan materi, video, atau kuis baru untuk mahasiswa Anda.</p>
                 <a href="{% url 'tambah_modul' %}" class="w-full py-3 bg-black text-white rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-800 transition shadow-lg"><i data-feather="plus" class="w-4 h-4"></i> Mulai Sekarang</a>
             </div>
+
             <div class="muse-card p-5">
                 <h4 class="font-bold text-sm mb-4 border-b border-white/10 pb-3 text-white">Pengumpulan Tugas Terkini</h4>
                 <div class="space-y-4">
                     {% for sub in recent_submissions %}
                     <div class="flex gap-3 items-start animate-fade-in">
                         <div class="w-2 h-2 mt-1.5 bg-green-500 rounded-full shadow-[0_0_5px_rgba(16,185,129,0.8)] flex-shrink-0"></div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-200 leading-snug">{{ sub.student.name }} mengumpulkan <span class="text-indigo-400">{{ sub.assignment.title|truncatewords:3 }}</span></p>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-gray-200 leading-snug truncate">{{ sub.student.name }} mengumpulkan <span class="text-indigo-400">{{ sub.assignment.title|truncatewords:2 }}</span></p>
                             <p class="text-[10px] text-gray-500 mt-0.5">{{ sub.submitted_at|timesince }} lalu</p>
                         </div>
                     </div>
@@ -222,13 +271,24 @@
 <script>
     feather.replace();
 
+    // SCRIPT TOGGLE SIDEBAR MOBILE
+    function toggleSidebar() {
+        const sidebar = document.querySelector('aside'); // Mengambil element sidebar dari base.html
+        const backdrop = document.getElementById('mobile-backdrop');
+
+        if (sidebar) {
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('show');
+        }
+    }
+
     // SCRIPT NOTIFIKASI AJAX
     function toggleNotif() {
         const dropdown = document.getElementById('notif-dropdown');
         if (dropdown.classList.contains('invisible')) {
             dropdown.classList.remove('invisible', 'opacity-0', 'scale-95');
             dropdown.classList.add('opacity-100', 'scale-100');
-            fetchNotifications(); 
+            fetchNotifications();
         } else {
             dropdown.classList.add('invisible', 'opacity-0', 'scale-95');
             dropdown.classList.remove('opacity-100', 'scale-100');
@@ -271,7 +331,7 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-start mb-0.5">
                                         <p class="text-xs font-bold text-white truncate pr-2">${n.sender}</p>
-                                        <span class="text-[9px] text-gray-500 whitespace-nowrap">${n.time}</span>
+                                        <span class="text-[9px] text-gray-500 whitespace-nowrap flex-shrink-0">${n.time}</span>
                                     </div>
                                     <p class="text-[11px] text-gray-400 leading-snug line-clamp-2 group-hover:text-gray-300">${n.text}</p>
                                 </div>
