@@ -15,6 +15,9 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator
 import json
+from urllib.parse import urlparse, parse_qs
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 def login_view(request):
     if request.session.get('user_id'):
@@ -79,7 +82,7 @@ def dosen_dashboard(request):
     user_id = request.session['user_id']
     nama_dosen = request.session.get('name', 'Dosen')
     
-    # 1. Data Mata Kuliah & Mahasiswa
+    # 1. Data Course & Mahasiswa
     courses_qs = Course.objects.filter(lecturer_id=user_id)
     
     # --- LOGIC BARU: Attach mahasiswa ke setiap course ---
@@ -178,10 +181,14 @@ def edit_modul(request, modul_id):
     return redirect('detail_modul_dosen', modul_id=module.module_id)
 
 def tambah_modul(request):
+    # Digunakan jika akses langsung lewat url, atau bisa diarahkan dari edit_course
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
         return redirect('login_view')
 
     user_id = request.session['user_id']
+    
+    # Jika ada parameter course_id di URL (misal: /modul/tambah/?course_id=5)
+    initial_course_id = request.GET.get('course_id')
     dosen_courses = Course.objects.filter(lecturer_id=user_id)
 
     if request.method == 'POST':
@@ -191,15 +198,18 @@ def tambah_modul(request):
 
         try:
             course = get_object_or_404(Course, course_id=course_id, lecturer_id=user_id)
-            Module.objects.create(title=title, description=description, course=course)
-            
+            module = Module.objects.create(title=title, description=description, course=course)
             messages.success(request, f"Modul berhasil ditambahkan.")
-            return redirect('dosen_dashboard')
+            # Redirect kembali ke edit course parent-nya
+            return redirect('edit_course', course_id=course.course_id)
 
         except Exception as e:
             messages.error(request, f"Error: {e}")
 
-    context = {'dosen_courses': dosen_courses}
+    context = {
+        'dosen_courses': dosen_courses,
+        'selected_course_id': int(initial_course_id) if initial_course_id else None
+    }
     return render(request, 'modul/form_modul.html', context)
 
 def hapus_modul(request, modul_id):
@@ -211,12 +221,17 @@ def hapus_modul(request, modul_id):
     if request.method == 'POST':
         try:
             module = get_object_or_404(Module, module_id=modul_id, course__lecturer_id=user_id)
+            course_id = module.course.course_id # Simpan ID course sebelum dihapus
             module.delete()
             messages.success(request, "Modul berhasil dihapus.")
+            
+            # REVISI: Redirect kembali ke halaman Edit Course, bukan Dashboard
+            return redirect('edit_course', course_id=course_id)
+            
         except Exception as e:
             messages.error(request, f"Error: {e}")
+            return redirect('dosen_dashboard')
 
-    # Redirect ke dashboard setelah hapus
     return redirect('dosen_dashboard')
 
 def mahasiswa_dashboard(request):
@@ -226,23 +241,16 @@ def mahasiswa_dashboard(request):
     user_id = request.session['user_id']
     nama_mahasiswa = request.session.get('name', 'Mahasiswa')
     
-    # --- 1. GET PARAMS (Search, Sort, Filter) ---
-    search_query = request.GET.get('q', '').lower()
-    sort_option = request.GET.get('sort', 'newest') # newest, oldest, a-z, z-a
-    filter_status = request.GET.get('filter', 'all') # all, active, completed
-
+    # --- 1. STATISTIK BELAJAR & ACTIVE COURSES ---
     enrollments = Enrollment.objects.filter(user_id=user_id).select_related('course', 'last_module')
+    enrolled_course_ids = list(enrollments.values_list('course_id', flat=True))
     
+    total_modules_done_all = 0
     active_courses = []
-    enrolled_course_ids = [] 
-    total_modules_done_all = 0 
 
     for enroll in enrollments:
-        enrolled_course_ids.append(enroll.course.course_id)
-        course = enroll.course
-        
-        # Hitung Progress
-        course_modules = Module.objects.filter(course=course).order_by('created_at')
+        # Hitung Progress Per Course
+        course_modules = Module.objects.filter(course=enroll.course).order_by('created_at')
         mod_ids = list(course_modules.values_list('module_id', flat=True))
         total_mods = len(mod_ids)
         
@@ -259,38 +267,24 @@ def mahasiswa_dashboard(request):
         progress = int((completed_count / total_mods) * 100) if total_mods > 0 else 0
         total_modules_done_all += completed_count
 
-        # --- 2. FILTER LOGIC FOR ACTIVE COURSES ---
-        # Filter by Search Text
-        if search_query and (search_query not in course.course_name.lower()) and (search_query not in (course.description or '').lower()):
-            continue 
+        # Masukkan ke list Active Courses (Jika belum 100%)
+        if progress < 100:
+            active_courses.append({
+                'course': enroll.course,
+                'total_modules': total_mods,
+                'first_module_id': resume_id,
+                'progress_percent': progress,
+                'completed_count': completed_count
+            })
 
-        # Filter by Status
-        if filter_status == 'completed' and progress < 100:
-            continue
-        if filter_status == 'active' and progress == 100:
-            continue
+    # Limit active courses di dashboard cuma 2 agar rapi
+    active_courses = active_courses[:2]
 
-        active_courses.append({
-            'course': course,
-            'total_modules': total_mods,
-            'first_module_id': resume_id,
-            'progress_percent': progress,
-            'completed_count': completed_count,
-            'created_at': course.created_at # Needed for sorting
-        })
-
-    # --- 3. SORT LOGIC ---
-    if sort_option == 'a-z':
-        active_courses.sort(key=lambda x: x['course'].course_name)
-    elif sort_option == 'z-a':
-        active_courses.sort(key=lambda x: x['course'].course_name, reverse=True)
-    elif sort_option == 'oldest':
-        active_courses.sort(key=lambda x: x['created_at'])
-    else: # newest (default)
-        active_courses.sort(key=lambda x: x['created_at'], reverse=True)
-
-
-    # --- 4. AVAILABLE COURSES QUERY ---
+    # --- 2. AVAILABLE COURSES (PAGINATION FIX: 6 ITEM) ---
+    search_query = request.GET.get('q', '').lower()
+    sort_option = request.GET.get('sort', 'newest')
+    
+    # Base Query: Exclude yang sudah di-enroll
     available_courses_qs = Course.objects.exclude(course_id__in=enrolled_course_ids).select_related('lecturer')
 
     # Filter Search
@@ -300,37 +294,29 @@ def mahasiswa_dashboard(request):
             Q(description__icontains=search_query)
         )
     
-    # Sort Available Courses
+    # Sort
     if sort_option == 'a-z':
         available_courses_qs = available_courses_qs.order_by('course_name')
-    elif sort_option == 'z-a':
+    elif sort_option == 'z-a': # Typo fix: z-a logic
         available_courses_qs = available_courses_qs.order_by('-course_name')
     elif sort_option == 'oldest':
         available_courses_qs = available_courses_qs.order_by('created_at')
-    else:
+    else: # newest
         available_courses_qs = available_courses_qs.order_by('-created_at')
 
-    context = {
-        'nama_mahasiswa': nama_mahasiswa,
-        'active_courses': active_courses,
-        'available_courses': available_courses_qs,
-        'search_query': search_query,
-        'sort_option': sort_option,
-        'filter_status': filter_status
-    }
+    # PAGINATION: 6 item per halaman (2 baris x 3 kolom)
+    paginator = Paginator(available_courses_qs, 6)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
-    # === AJAX HANDLER ===
-    # Jika request AJAX, kembalikan potongan HTML saja, bukan full page
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, 'components/dashboard_content.html', context)
-
-    # --- JIKA BUKAN AJAX, LOAD DATA STATISTIK UTUH ---
+    # --- 3. DATA STATISTIK LAINNYA ---
     assignments_done = Submission.objects.filter(student_id=user_id).count()
     avg_data = Grade.objects.filter(user_id=user_id).aggregate(Avg('score'))
     avg_score = avg_data['score__avg'] or 0 
     discussion_count = Discussion.objects.filter(user_id=user_id).count()
     total_points = (assignments_done * 50) + (total_modules_done_all * 10) + (discussion_count * 5)
 
+    # Pending Tasks
     all_assignments = Assignment.objects.filter(
         module__course__course_id__in=enrolled_course_ids
     ).order_by('deadline')
@@ -345,7 +331,12 @@ def mahasiswa_dashboard(request):
         course_id__in=enrolled_course_ids
     ).select_related('user', 'course').order_by('-created_at')[:4]
 
-    context.update({
+    context = {
+        'nama_mahasiswa': nama_mahasiswa,
+        'active_courses': active_courses,
+        'available_courses': page_obj, # Gunakan Page Object
+        'search_query': search_query,
+        'sort_option': sort_option,
         'stats': {
             'modules_done': total_modules_done_all,
             'assignments_done': assignments_done,
@@ -355,7 +346,11 @@ def mahasiswa_dashboard(request):
         },
         'pending_tasks': pending_tasks,
         'recent_discussions': recent_discussions,
-    })
+    }
+
+    # Jika request AJAX (untuk filter/pagination dashboard), render partial
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/dashboard_content.html', context)
 
     return render(request, 'mahasiswa_dashboard.html', context)
 
@@ -500,32 +495,77 @@ def detail_modul(request, modul_id):
 def list_modul(request):
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
         return redirect('login_view')
+    
     user_id = request.session['user_id']
     dosen_courses = Course.objects.filter(lecturer_id=user_id)
-    modules = Module.objects.filter(course__in=dosen_courses).order_by('course__course_name', 'title')
-    return render(request, 'modul/list_modul.html', {'modules': modules})
+    
+    # 1. Base Query
+    modules_qs = Module.objects.filter(course__in=dosen_courses).select_related('course')
+
+    # 2. Search Logic
+    search_query = request.GET.get('q', '')
+    if search_query:
+        modules_qs = modules_qs.filter(title__icontains=search_query)
+
+    # 3. Sort Logic
+    sort_option = request.GET.get('sort', 'newest')
+    if sort_option == 'a-z':
+        modules_qs = modules_qs.order_by('title')
+    elif sort_option == 'z-a':
+        modules_qs = modules_qs.order_by('-title')
+    elif sort_option == 'oldest':
+        modules_qs = modules_qs.order_by('created_at')
+    else: # newest (default)
+        modules_qs = modules_qs.order_by('-created_at')
+
+    # 4. Pagination (10 item per halaman)
+    paginator = Paginator(modules_qs, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'modules': page_obj,
+        'search_query': search_query,
+        'sort_option': sort_option
+    }
+
+    # 5. AJAX Handling: Jika request dari JS, render hanya potongan tabelnya saja
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/modul_list_content.html', context)
+
+    return render(request, 'modul/list_modul.html', context)
 
 # --- 3. FUNGSI BARU: CRUD KONTEN (HALAMAN) ---
 
 # Helper kecil untuk convert URL Youtube (copas dari logic Model biar konsisten)
 def get_embed_url_helper(url):
     if not url: return ""
+    url = url.strip()
     
-    video_id = ""
-    if "v=" in url:
-        try:
-            video_id = url.split('v=')[1].split('&')[0]
-        except IndexError:
-            return url
-    elif "youtu.be" in url:
-        try:
-            video_id = url.split('/')[-1].split('?')[0]
-        except IndexError:
-            return url
-            
-    if video_id:
-        return f"https://www.youtube.com/embed/{video_id}"
+    # Tambahkan https jika lupa
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
         
+    try:
+        parsed = urlparse(url)
+        if 'youtube' in parsed.netloc or 'youtu.be' in parsed.netloc:
+            video_id = None
+            if 'youtu.be' in parsed.netloc:
+                video_id = parsed.path.lstrip('/')
+            elif 'youtube.com' in parsed.netloc:
+                if '/watch' in parsed.path:
+                    video_id = parse_qs(parsed.query).get('v', [None])[0]
+                elif '/embed/' in parsed.path:
+                    video_id = parsed.path.split('/')[-1]
+                elif '/shorts/' in parsed.path:
+                    video_id = parsed.path.split('/')[-1]
+            
+            if video_id:
+                clean_id = video_id.split('&')[0].split('?')[0]
+                return f"https://www.youtube.com/embed/{clean_id}"
+    except:
+        pass
+            
     return url
 
 # 1. CREATE CONTENT AJAX
@@ -1641,33 +1681,28 @@ def landing_page(request):
     return render(request, 'landing_page.html')
 
 def tambah_course(request):
-    # 1. Cek Login & Role Dosen
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
         return redirect('login_view')
 
     if request.method == 'POST':
-        # 2. Ambil Data Input
         course_name = request.POST.get('course_name')
         description = request.POST.get('description')
         user_id = request.session['user_id']
 
         try:
-            # 3. Simpan ke Database
             lecturer = User.objects.get(user_id=user_id)
-            
-            Course.objects.create(
+            course = Course.objects.create(
                 course_name=course_name,
                 description=description,
                 lecturer=lecturer
             )
-            
-            messages.success(request, "Mata Kuliah berhasil dibuat!")
-            return redirect('dosen_dashboard')
+            messages.success(request, "Course berhasil dibuat!")
+            # Redirect ke edit agar bisa langsung tambah modul
+            return redirect('edit_course', course_id=course.course_id) 
 
         except Exception as e:
             messages.error(request, f"Terjadi kesalahan: {e}")
 
-    # 4. Render Form (GET)
     return render(request, 'course/form_course.html')
 
 def edit_course(request, course_id):
@@ -1675,21 +1710,24 @@ def edit_course(request, course_id):
     if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
         return redirect('login_view')
 
-    # 2. Ambil Data Course (Pastikan milik dosen yang sedang login agar aman)
     user_id = request.session['user_id']
     course = get_object_or_404(Course, course_id=course_id, lecturer_id=user_id)
 
+    # 2. PROSES UPDATE COURSE
     if request.method == 'POST':
-        # 3. Proses Update
         course.course_name = request.POST.get('course_name')
         course.description = request.POST.get('description')
         course.save()
-        
-        messages.success(request, "Informasi mata kuliah berhasil diperbarui.")
+        messages.success(request, "Informasi course berhasil diperbarui.")
         return redirect('dosen_dashboard')
 
-    # 4. Render Form dengan Data Lama
-    return render(request, 'course/form_course.html', {'course': course})
+    # 3. AMBIL DAFTAR MODUL UNTUK COURSE INI (REVISI)
+    modules = Module.objects.filter(course=course).order_by('created_at')
+
+    return render(request, 'course/form_course.html', {
+        'course': course,
+        'modules': modules # Kirim data modul ke template
+    })
 
 def get_notifications_ajax(request):
     user_id = request.session.get('user_id')
@@ -1760,3 +1798,123 @@ def get_notifications_ajax(request):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+def course_catalog(request):
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Mahasiswa':
+        return redirect('login_view')
+    
+    user_id = request.session['user_id']
+    enrolled_ids = list(Enrollment.objects.filter(user_id=user_id).values_list('course_id', flat=True))
+    
+    # 1. Ambil Parameter
+    search_query = request.GET.get('q', '').lower()
+    sort_option = request.GET.get('sort', 'newest')
+    filter_type = request.GET.get('filter', 'all')
+    page_number = request.GET.get('page', 1)
+
+    # 2. Query
+    courses_qs = Course.objects.all().select_related('lecturer')
+
+    # Filter
+    if filter_type == 'available':
+        courses_qs = courses_qs.exclude(course_id__in=enrolled_ids)
+    elif filter_type == 'enrolled':
+        courses_qs = courses_qs.filter(course_id__in=enrolled_ids)
+
+    # Search
+    if search_query:
+        courses_qs = courses_qs.filter(
+            Q(course_name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(lecturer__name__icontains=search_query)
+        )
+
+    # Sort
+    if sort_option == 'a-z':
+        courses_qs = courses_qs.order_by('course_name')
+    elif sort_option == 'z-a':
+        courses_qs = courses_qs.order_by('-course_name')
+    elif sort_option == 'oldest':
+        courses_qs = courses_qs.order_by('created_at')
+    else: # newest
+        courses_qs = courses_qs.order_by('-created_at')
+
+    # Pagination (9 item per page)
+    paginator = Paginator(courses_qs, 9)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'courses': page_obj,
+        'enrolled_ids': enrolled_ids,
+        'search_query': search_query,
+        'sort_option': sort_option,
+        'filter_type': filter_type,
+    }
+    
+    # --- LOGIC AJAX ---
+    # Jika request datang dari JavaScript, render hanya bagian kontennya saja
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/catalog_content.html', context)
+    
+    # Jika akses biasa, render full page
+    return render(request, 'mahasiswa/list_course.html', context)
+
+def list_course(request):
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+        return redirect('login_view')
+    
+    user_id = request.session['user_id']
+    
+    # 1. Base Query
+    # Kita annotate jumlah modul dan siswa agar bisa ditampilkan di tabel
+    courses_qs = Course.objects.filter(lecturer_id=user_id).annotate(
+        module_count=Count('module__module_id', distinct=True),
+        student_count=Count('enrollment__enrollment_id', distinct=True)
+    )
+
+    # 2. Search
+    search_query = request.GET.get('q', '')
+    if search_query:
+        courses_qs = courses_qs.filter(course_name__icontains=search_query)
+
+    # 3. Sort
+    sort_option = request.GET.get('sort', 'newest')
+    if sort_option == 'a-z':
+        courses_qs = courses_qs.order_by('course_name')
+    elif sort_option == 'z-a':
+        courses_qs = courses_qs.order_by('-course_name')
+    elif sort_option == 'oldest':
+        courses_qs = courses_qs.order_by('created_at')
+    else: # newest
+        courses_qs = courses_qs.order_by('-created_at')
+
+    # 4. Pagination
+    paginator = Paginator(courses_qs, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'courses': page_obj,
+        'search_query': search_query,
+        'sort_option': sort_option
+    }
+
+    # AJAX Response
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'components/course_list_content.html', context)
+
+    return render(request, 'course/list_course.html', context)
+
+def hapus_course(request, course_id):
+    if not request.session.get('user_id') or request.session.get('role_name') != 'Dosen':
+        return redirect('login_view')
+
+    if request.method == 'POST':
+        try:
+            course = get_object_or_404(Course, course_id=course_id, lecturer_id=request.session['user_id'])
+            course.delete()
+            messages.success(request, "Course berhasil dihapus.")
+        except Exception as e:
+            messages.error(request, f"Gagal menghapus: {e}")
+    
+    return redirect('list_course')

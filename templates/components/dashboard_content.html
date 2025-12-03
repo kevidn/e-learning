@@ -1,126 +1,72 @@
 {% load static %}
 
-{# SECTION 1: CONTINUE LEARNING (Modern Dark Theme) #}
-<div class="mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {% for item in active_courses %}
-        <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between group transition-all duration-300 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:-translate-y-1 animate-fade-in relative overflow-hidden">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for course in available_courses %}
+    <a href="{% url 'course_detail' course.course_id %}" class="block group h-full animate-fade-in">
+        <div class="bg-[#1A1D24] rounded-[2rem] p-3 border border-white/5 transition-all duration-300 hover:border-indigo-500/30 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] hover:-translate-y-1 h-full flex flex-col">
             
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-600/0 to-violet-600/0 opacity-0 group-hover:opacity-5 transition-all duration-500 pointer-events-none"></div>
-
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="flex items-center space-x-4">
-                    <div class="w-14 h-14 rounded-2xl bg-indigo-600/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                        <i data-feather="book" class="w-7 h-7"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-white text-lg leading-tight line-clamp-1" title="{{ item.course.course_name }}">{{ item.course.course_name }}</h4>
-                        <span class="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-md bg-[#252A33] text-[10px] font-bold text-indigo-300 uppercase tracking-wider border border-indigo-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse mr-1.5"></span> Active
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="relative z-10">
-                <div class="flex justify-between items-end mb-2">
-                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</span>
-                    <span class="text-xl font-black text-white">{{ item.progress_percent }}<span class="text-sm text-indigo-400">%</span></span>
-                </div>
-                <div class="w-full bg-[#0F1115] rounded-full h-2.5 mb-4 overflow-hidden shadow-inner border border-white/5">
-                    <div class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full relative transition-all duration-500 group-hover:shadow-[0_0_15px_rgba(99,102,241,0.5)]" style="width: {{ item.progress_percent }}%">
-                    </div>
-                </div>
+            <div class="relative h-40 rounded-[1.5rem] overflow-hidden bg-[#0F1115] mb-4 flex-shrink-0">
+                {# GAMBAR UNSPLASH #}
+                <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" 
+                     class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                     alt="{{ course.course_name }}">
                 
-                <div class="flex justify-between items-center pt-4 border-t border-white/5 group-hover:border-indigo-500/20 transition-all">
-                    <span class="text-xs font-medium text-gray-400 flex items-center">
-                        <i data-feather="layers" class="w-4 h-4 mr-1.5 text-gray-600 group-hover:text-indigo-400 transition-all"></i> 
-                        {{ item.completed_count }} / <span class="text-white ml-0.5">{{ item.total_modules }}</span> Modul
-                    </span>
-                    
-                    {% if item.first_module_id %}
-                    <a href="{% url 'detail_modul' item.first_module_id %}" class="group/btn flex items-center text-sm font-bold text-white transition-colors bg-[#252A33] pl-4 pr-1 py-1 rounded-full border border-white/5 hover:bg-indigo-600 hover:border-indigo-600">
-                        Lanjut 
-                        <div class="ml-3 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-indigo-600 transition-all duration-300">
-                            <i data-feather="arrow-right" class="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform"></i>
+                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#1A1D24] to-transparent pt-10">
+                    <h4 class="text-white font-bold text-lg leading-tight line-clamp-1 group-hover:text-indigo-300 transition-colors">{{ course.course_name }}</h4>
+                </div>
+            </div>
+
+            <div class="flex flex-col flex-1 justify-between px-2 pb-2">
+                <p class="text-sm text-gray-400 mb-4 line-clamp-2 leading-relaxed h-10">
+                    {{ course.description|default:"Tidak ada deskripsi." }}
+                </p>
+
+                <div class="flex justify-between items-center pt-3 border-t border-white/5">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-6 h-6 rounded-full bg-[#252A33] flex items-center justify-center text-gray-400 font-bold text-[10px] border border-white/5">
+                            {{ course.lecturer.name|slice:":1" }}
                         </div>
-                    </a>
-                    {% else %}
-                    <span class="text-xs font-bold text-gray-600 cursor-not-allowed bg-[#252A33] px-3 py-1.5 rounded-full">Belum Tersedia</span>
-                    {% endif %}
+                        <span class="text-xs text-gray-500 font-medium truncate max-w-[100px]">{{ course.lecturer.name }}</span>
+                    </div>
+                    <div class="text-indigo-400 hover:text-white transition-colors">
+                        <i data-feather="arrow-right-circle" class="w-5 h-5"></i>
+                    </div>
                 </div>
             </div>
         </div>
-        {% empty %}
-        <div class="col-span-full py-16 text-center bg-[#1A1D24] rounded-[2rem] border border-dashed border-white/10 animate-fade-in flex flex-col items-center justify-center">
-            <div class="w-16 h-16 bg-[#252A33] rounded-full flex items-center justify-center mb-4 text-gray-600">
-                <i data-feather="book-open" class="w-8 h-8"></i>
-            </div>
-            <p class="text-gray-400 font-medium mb-1">Tidak ada kelas aktif yang cocok.</p>
-            <p class="text-gray-600 text-sm">Coba ubah filter pencarian Anda.</p>
-        </div>
-        {% endfor %}
-
+    </a>
+    {% empty %}
+    <div class="col-span-3 py-12 text-center text-gray-600 bg-[#1A1D24] rounded-[2rem] border border-dashed border-white/10">
+        <p>Tidak ada kelas yang ditemukan.</p>
     </div>
+    {% endfor %}
 </div>
 
-{# SECTION 2: AVAILABLE COURSES (Modern Dark Theme) #}
-<div>
-    <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold text-white">Kelas Tersedia Lainnya</h3>
-        <a href="#" class="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center">
-            Lihat Katalog <i data-feather="chevron-right" class="w-4 h-4 ml-1"></i>
-        </a>
-    </div>
+{# PAGINATION CONTROLS (Terkoneksi ke fungsi changePage di dashboard) #}
+{% if available_courses.has_other_pages %}
+<div class="flex justify-center mt-8 gap-2">
+    {% if available_courses.has_previous %}
+        <button onclick="changePage({{ available_courses.previous_page_number }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1A1D24] text-gray-400 hover:text-white hover:bg-[#252A33] border border-white/10 transition-all">
+            <i data-feather="chevron-left" class="w-4 h-4"></i>
+        </button>
+    {% endif %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {% for course in available_courses %}
-        <a href="{% url 'course_detail' course.course_id %}" class="block group h-full animate-fade-in">
-            <div class="bg-[#1A1D24] rounded-[2rem] p-3 border border-white/5 transition-all duration-300 hover:border-indigo-500/30 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] hover:-translate-y-1 h-full flex flex-col">
-                
-                <div class="relative h-48 rounded-[1.5rem] overflow-hidden bg-[#0F1115] mb-4 flex-shrink-0">
-                    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" 
-                        alt="{{ course.course_name }}" 
-                        class="w-full h-full object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0">
-                    
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#1A1D24] via-[#1A1D24]/40 to-transparent p-5 flex flex-col justify-end">
-                        <h4 class="text-white font-bold text-lg leading-tight line-clamp-2 drop-shadow-md group-hover:text-indigo-200 transition-colors">{{ course.course_name }}</h4>
-                    </div>
-                    
-                    <div class="absolute top-4 left-4 flex gap-2">
-                         <span class="bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-3 py-1 rounded-full">
-                            COURSE
-                        </span>
-                    </div>
-                </div>
+    {% for i in available_courses.paginator.page_range %}
+        {% if available_courses.number == i %}
+            <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30">
+                {{ i }}
+            </button>
+        {% else %}
+            <button onclick="changePage({{ i }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1A1D24] text-gray-400 hover:text-white hover:bg-[#252A33] border border-white/10 transition-all">
+                {{ i }}
+            </button>
+        {% endif %}
+    {% endfor %}
 
-                <div class="flex flex-col flex-1 justify-between px-3 pb-3">
-                    <p class="text-sm text-gray-400 mb-6 line-clamp-2 leading-relaxed">
-                        {{ course.description|truncatewords:12|default:"Pelajari materi ini untuk meningkatkan skill Anda." }}
-                    </p>
-
-                    <div class="flex justify-between items-center pt-4 border-t border-white/5 group-hover:border-white/10 transition-all">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-full bg-[#252A33] flex items-center justify-center text-gray-300 font-bold text-xs border border-white/5 group-hover:border-indigo-500/50 transition-all">
-                                {{ course.lecturer.name|slice:":1" }}
-                            </div>
-                            <div class="text-xs">
-                                <p class="text-gray-500 font-medium mb-0.5">Pengajar</p>
-                                <p class="font-bold text-gray-200 group-hover:text-white transition-colors">{{ course.lecturer.name }}</p>
-                            </div>
-                        </div>
-                        <div class="w-10 h-10 rounded-full bg-[#252A33] text-gray-400 flex items-center justify-center border border-white/5 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all duration-300 transform group-hover:rotate-45">
-                            <i data-feather="arrow-up-right" class="w-5 h-5"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-        {% empty %}
-        <div class="col-span-2 py-12 text-center text-gray-600 animate-fade-in bg-[#1A1D24] rounded-[2rem] border border-dashed border-white/10">
-            <p>Belum ada kelas baru yang tersedia.</p>
-        </div>
-        {% endfor %}
-    </div>
+    {% if available_courses.has_next %}
+        <button onclick="changePage({{ available_courses.next_page_number }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1A1D24] text-gray-400 hover:text-white hover:bg-[#252A33] border border-white/10 transition-all">
+            <i data-feather="chevron-right" class="w-4 h-4"></i>
+        </button>
+    {% endif %}
 </div>
+{% endif %}

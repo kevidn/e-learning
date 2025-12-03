@@ -2,62 +2,16 @@
 {% load static %}
 
 {% block title %}Dashboard Mahasiswa | Modern Dark{% endblock %}
-{% block header_title %}{% endblock %}
-{% block header_subtitle %}{% endblock %}
-{% block navbar_actions %}{% endblock %}
 
-{# --- OVERRIDE STYLE SIDEBAR BAWAAN AGAR SESUAI TEMA GELAP --- #}
+{# --- SIDEBAR MANUAL (TETAP DIPERTAHANKAN) --- #}
 {% block sidebar_menu %}
-<div class="space-y-6">
-    <div>
-        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Menu Utama</p>
-        
-        <div class="space-y-1">
-            {# 1. OVERVIEW (Aktif) #}
-            <a href="{% url 'mahasiswa_dashboard' %}" class="group flex items-center space-x-3 px-4 py-3.5 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20 transition-all relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <i data-feather="grid" class="w-5 h-5 relative z-10"></i>
-                <span class="relative z-10">Overview</span>
-            </a>
-
-            {# 2. MY LEARNING #}
-            <a href="{% url 'my_learning' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <i data-feather="book-open" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
-                <span>My Learning</span>
-            </a>
-
-            {# 3. DISKUSI #}
-            <a href="{% url 'chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <i data-feather="message-circle" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
-                <span>Diskusi Kelas</span>
-            </a>
-        </div>
-    </div>
-
-    <div>
-        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Personal</p>
-        
-        <div class="space-y-1">
-            {# 4. PESAN #}
-            <a href="{% url 'private_chat_index' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <i data-feather="mail" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
-                <span>Pesan Pribadi</span>
-            </a>
-
-            {# 5. PROFILE #}
-            <a href="{% url 'profile_view' %}" class="group flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <i data-feather="user" class="w-5 h-5 group-hover:text-indigo-400 transition-colors"></i>
-                <span>Profile</span>
-            </a>
-        </div>
-    </div>
-</div>
+{% include 'components/sidebar_mahasiswa.html' %}
 {% endblock %}
-
 
 {% block content %}
 <div class="min-h-full bg-[#0F1115] p-6 lg:p-8"> 
     
+    {# --- HEADER --- #}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
             <h2 class="text-3xl font-bold text-white tracking-tight">Dashboard</h2>
@@ -65,86 +19,82 @@
         </div>
 
         <div class="flex items-center gap-4">
-            
-            {# --- TOMBOL NOTIFIKASI BARU --- #}
+            {# Notifikasi #}
             <div class="relative" id="notif-container">
                 <button onclick="toggleNotif()" class="p-3 bg-[#1A1D24] rounded-full text-gray-400 hover:text-white hover:bg-[#252A33] transition-all border border-white/5 shadow-md group">
                     <i data-feather="bell" class="w-5 h-5"></i>
                     <span id="notif-badge" class="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-[#1A1D24] hidden animate-pulse"></span>
                 </button>
-
                 <div id="notif-dropdown" class="absolute right-0 mt-4 w-80 bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 transform scale-95 opacity-0 invisible transition-all duration-200 origin-top-right overflow-hidden z-50">
                     <div class="px-5 py-4 border-b border-white/5 bg-[#20242C] flex justify-between items-center">
                         <h3 class="text-sm font-bold text-white">Notifikasi</h3>
-                        <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">Terbaru</span>
                     </div>
                     <div id="notif-list" class="max-h-[300px] overflow-y-auto custom-scroll">
                         <div class="p-6 text-center text-gray-500 text-xs">Memuat...</div>
                     </div>
                 </div>
             </div>
-            {# -------------------------------- #}
 
+            {# User Info #}
             <div class="hidden md:flex items-center gap-4 bg-[#1A1D24] p-2 pr-4 rounded-full border border-white/5">
                 <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
                     {{ nama_mahasiswa|slice:":1" }}
                 </div>
                 <div>
                     <p class="text-white text-sm font-bold leading-none">{{ nama_mahasiswa }}</p>
-                    <p class="text-indigo-400 text-xs font-medium">Student Account</p>
+                    <p class="text-indigo-400 text-xs font-medium">Mahasiswa</p>
                 </div>
             </div>
         </div>
     </div>
 
-
     <div class="grid grid-cols-12 gap-8">
 
-        {# --- CENTER COLUMN (Main Content) --- #}
+        {# --- KOLOM TENGAH (UTAMA) --- #}
         <div class="col-span-12 xl:col-span-8 space-y-8">
             
-            {# HERO SECTION (Statistik Utama - Layout Baru!) #}
+            {# 1. HERO STATS #}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-[2rem] text-white relative overflow-hidden shadow-xl shadow-indigo-900/30">
+                <div class="md:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-[2rem] text-white relative overflow-hidden shadow-xl shadow-indigo-900/30 group">
                      <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-                    <i data-feather="zap" class="absolute bottom-4 right-4 w-24 h-24 text-white/10"></i>
+                    <i data-feather="zap" class="absolute bottom-4 right-4 w-24 h-24 text-white/10 group-hover:scale-110 transition-transform duration-500"></i>
 
                     <div class="relative z-10">
                         <p class="text-indigo-100 text-sm font-medium mb-2 flex items-center">
                             <i data-feather="activity" class="w-4 h-4 mr-2"></i> Learning Progress
                         </p>
                         <h3 class="text-5xl font-black mb-4">{{ stats.points }} <span class="text-2xl font-bold text-indigo-200">XP</span></h3>
-                        <div class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm backdrop-blur-md border border-white/10">
-                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Level Student Aktif
+                        
+                        <div class="flex flex-wrap gap-3">
+                            <div class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm backdrop-blur-md border border-white/10">
+                                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                Level Student Aktif
+                            </div>
+                            <a href="{% url 'course_catalog' %}" class="inline-flex items-center gap-2 bg-white text-indigo-900 px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-100 transition-colors shadow-lg">
+                                <i data-feather="compass" class="w-3 h-3"></i> Jelajahi Kursus
+                            </a>
                         </div>
                     </div>
                 </div>
                 
                 <div class="grid grid-rows-3 gap-4">
-                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                                <i data-feather="layers" class="w-5 h-5"></i>
-                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center"><i data-feather="layers" class="w-5 h-5"></i></div>
                             <span class="text-gray-400 text-sm font-medium">Modul Selesai</span>
                         </div>
                         <span class="text-white text-xl font-bold">{{ stats.modules_done }}</span>
                     </div>
-                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                    <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                             <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                                <i data-feather="check-square" class="w-5 h-5"></i>
-                            </div>
+                             <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center"><i data-feather="check-square" class="w-5 h-5"></i></div>
                             <span class="text-gray-400 text-sm font-medium">Tugas Submit</span>
                         </div>
                         <span class="text-white text-xl font-bold">{{ stats.assignments_done }}</span>
                     </div>
-                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+                     <div class="bg-[#1A1D24] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                             <div class="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
-                                <i data-feather="bar-chart-2" class="w-5 h-5"></i>
-                            </div>
+                             <div class="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center"><i data-feather="bar-chart-2" class="w-5 h-5"></i></div>
                             <span class="text-gray-400 text-sm font-medium">Rata-rata Nilai</span>
                         </div>
                         <span class="text-white text-xl font-bold">{{ stats.avg_score }}</span>
@@ -152,57 +102,102 @@
                 </div>
             </div>
 
-            {# FILTER BAR (Pindah ke bawah hero section) #}
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
-                <h3 class="text-xl font-bold text-white mb-0">Aktivitas Belajar</h3>
-                <form id="filter-form" class="flex gap-3 w-full md:w-auto">
-                     <div class="relative flex-1 md:w-64 group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-feather="search" class="text-gray-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors"></i>
+            {# 2. AKTIVITAS BELAJAR (Lanjutkan Belajar) #}
+            <div>
+                <h3 class="text-xl font-bold text-white mb-4">Lanjutkan Belajar</h3>
+                {% if active_courses %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for item in active_courses %}
+                    <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between group transition-all duration-300 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:-translate-y-1 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-600/0 to-violet-600/0 opacity-0 group-hover:opacity-5 transition-all duration-500 pointer-events-none"></div>
+                        <div class="flex justify-between items-start mb-6 relative z-10">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-14 h-14 rounded-2xl bg-indigo-600/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                                    <i data-feather="book" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg leading-tight line-clamp-1" title="{{ item.course.course_name }}">{{ item.course.course_name }}</h4>
+                                    <span class="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-md bg-[#252A33] text-[10px] font-bold text-indigo-300 uppercase tracking-wider border border-indigo-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse mr-1.5"></span> Active
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi..." 
-                               class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600 
-                                      focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 transition-all outline-none">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</span>
+                                <span class="text-xl font-black text-white">{{ item.progress_percent }}<span class="text-sm text-indigo-400">%</span></span>
+                            </div>
+                            <div class="w-full bg-[#0F1115] rounded-full h-2.5 mb-4 overflow-hidden shadow-inner border border-white/5">
+                                <div class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full relative transition-all duration-500" style="width: {{ item.progress_percent }}%"></div>
+                            </div>
+                            <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                                <span class="text-xs font-medium text-gray-400 flex items-center">
+                                    <i data-feather="layers" class="w-4 h-4 mr-1.5 text-gray-600"></i> 
+                                    {{ item.completed_count }} / {{ item.total_modules }} Modul
+                                </span>
+                                {% if item.first_module_id %}
+                                <a href="{% url 'detail_modul' item.first_module_id %}" class="flex items-center text-sm font-bold text-white bg-[#252A33] pl-4 pr-1 py-1 rounded-full border border-white/5 hover:bg-indigo-600 hover:border-indigo-600 transition-colors group/btn">
+                                    Lanjut <div class="ml-3 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-indigo-600 transition-all"><i data-feather="arrow-right" class="w-4 h-4"></i></div>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                     <div class="relative w-40">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-feather="filter" class="text-gray-500 w-4 h-4"></i>
-                        </div>
-                        <select name="sort" class="w-full pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
-                            <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
-                            <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Terlama</option>
-                            <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <i data-feather="chevron-down" class="text-gray-600 w-4 h-4"></i>
-                        </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="bg-[#1A1D24] p-8 rounded-[2rem] border border-dashed border-white/10 text-center">
+                    <div class="w-16 h-16 bg-[#252A33] rounded-full flex items-center justify-center mx-auto mb-4 text-gray-600">
+                        <i data-feather="book-open" class="w-8 h-8"></i>
                     </div>
-                </form>
+                    <p class="text-gray-400 font-medium">Belum ada kelas yang sedang dipelajari.</p>
+                    <a href="{% url 'course_catalog' %}" class="text-indigo-400 hover:text-indigo-300 text-sm font-bold mt-2 inline-block">Mulai Cari Kelas Baru</a>
+                </div>
+                {% endif %}
             </div>
 
-            {# CONTAINER UNTUK AJAX KONTEN UTAMA #}
-            <div id="dashboard-content" class="min-h-[400px]">
-                {% include 'components/dashboard_content.html' %}
+            {# 3. REKOMENDASI KELAS (FILTER + AJAX CONTENT) #}
+            <div>
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 mb-6">
+                    <h3 class="text-xl font-bold text-white mb-0">Rekomendasi Kelas</h3>
+                    
+                    {# Form Filter untuk AJAX #}
+                    <form id="filter-form" class="flex gap-3 w-full md:w-auto">
+                         <input type="hidden" name="page" id="page-input" value="1">
+                         <div class="relative flex-1 md:w-64 group">
+                            <i data-feather="search" class="absolute left-4 top-3 text-gray-500 w-4 h-4"></i>
+                            <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi..." 
+                                   class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600 focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 transition-all outline-none">
+                        </div>
+                         <div class="relative w-40">
+                            <select name="sort" class="w-full pl-4 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
+                                <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
+                                <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
+                            </select>
+                            <i data-feather="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-gray-600 pointer-events-none"></i>
+                        </div>
+                    </form>
+                </div>
+
+                {# Container ini akan di-isi ulang oleh AJAX #}
+                <div id="dashboard-content" class="min-h-[400px]">
+                    {% include 'components/dashboard_content.html' %}
+                </div>
             </div>
             
         </div>
 
-        {# --- RIGHT COLUMN (Sidebar Kanan - Lebih Bersih) --- #}
+        {# --- KOLOM KANAN (SIDEBAR) --- #}
         <div class="col-span-12 xl:col-span-4 space-y-6">
-            
             {# DEADLINE CARD #}
             <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
                  <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-
                 <div class="flex justify-between items-center mb-6 relative z-10">
                     <h4 class="font-bold text-white text-lg flex items-center">
-                        <span class="bg-red-500/20 text-red-500 p-2 rounded-lg mr-3">
-                             <i data-feather="clock" class="w-5 h-5"></i>
-                        </span>
-                        Deadline Terdekat
+                        <span class="bg-red-500/20 text-red-500 p-2 rounded-lg mr-3"><i data-feather="clock" class="w-5 h-5"></i></span> Deadline
                     </h4>
                 </div>
-                
                 <div class="space-y-4 relative z-10">
                     {% for task in pending_tasks %}
                     <div class="group flex items-center p-3 rounded-2xl bg-[#252A33] border border-transparent hover:border-red-500/30 transition-all cursor-pointer">
@@ -210,21 +205,14 @@
                             <span class="text-[10px] font-bold uppercase tracking-wide leading-none mb-0.5">{{ task.deadline|date:"M" }}</span>
                             <span class="text-lg font-extrabold leading-none text-white">{{ task.deadline|date:"d" }}</span>
                         </div>
-                        
                         <div class="ml-4 flex-1 min-w-0">
                             <p class="text-sm font-bold text-gray-200 truncate group-hover:text-white transition-colors">{{ task.title }}</p>
                             <p class="text-xs text-gray-500 truncate mt-0.5">{{ task.module.course.course_name }}</p>
                         </div>
-                        
-                        <a href="{% url 'detail_modul' task.module.module_id %}" class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300 hover:bg-red-500 hover:text-white">
-                            <i data-feather="arrow-right" class="w-4 h-4"></i>
-                        </a>
+                        <a href="{% url 'detail_modul' task.module.module_id %}" class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"><i data-feather="arrow-right" class="w-4 h-4"></i></a>
                     </div>
                     {% empty %}
-                    <div class="py-10 text-center opacity-50 bg-[#252A33] rounded-2xl border border-dashed border-white/10">
-                        <i data-feather="check-circle" class="w-8 h-8 text-gray-500 mx-auto mb-2"></i>
-                        <p class="text-sm text-gray-400">Semua tugas aman!</p>
-                    </div>
+                    <div class="py-10 text-center opacity-50 bg-[#252A33] rounded-2xl border border-dashed border-white/10"><p class="text-sm text-gray-400">Semua tugas aman!</p></div>
                     {% endfor %}
                 </div>
             </div>
@@ -233,92 +221,57 @@
             <div class="bg-[#1A1D24] p-6 rounded-[2rem] border border-white/5">
                 <div class="flex justify-between items-center mb-6">
                     <h4 class="font-bold text-white text-lg flex items-center">
-                        <span class="bg-indigo-500/20 text-indigo-400 p-2 rounded-lg mr-3">
-                             <i data-feather="message-square" class="w-5 h-5"></i>
-                        </span>
-                        Diskusi Terbaru
+                        <span class="bg-indigo-500/20 text-indigo-400 p-2 rounded-lg mr-3"><i data-feather="message-square" class="w-5 h-5"></i></span> Diskusi
                     </h4>
                     <a href="{% url 'chat_index' %}" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua</a>
                 </div>
-
                 <div class="space-y-5 relative">
                     <div class="absolute left-[19px] top-2 bottom-2 w-[2px] bg-[#252A33]"></div>
-
                     {% for chat in recent_discussions %}
                     <div class="flex gap-4 relative z-10 group">
                         <div class="w-10 h-10 rounded-full bg-[#252A33] border-2 border-[#1A1D24] flex items-center justify-center text-xs font-bold text-gray-300 group-hover:border-indigo-500 transition-all shrink-0">
                             {{ chat.user.name|slice:":1" }}
                         </div>
-                        
                         <div class="flex-1 min-w-0 bg-[#252A33] p-3 rounded-xl rounded-tl-none border border-transparent group-hover:border-indigo-500/30 transition-all">
                             <div class="flex justify-between items-baseline mb-1">
                                 <p class="text-xs font-bold text-indigo-300 truncate">{{ chat.user.name }}</p>
                                 <span class="text-[9px] text-gray-600 font-mono">{{ chat.created_at|timesince }}</span>
                             </div>
-                            
-                            <p class="text-xs text-gray-300 leading-relaxed italic">
-                                "{{ chat.message|truncatewords:8 }}"
-                            </p>
-                            <p class="text-[9px] font-bold text-gray-500 mt-2 uppercase tracking-wider flex items-center">
-                                <i data-feather="hash" class="w-3 h-3 mr-1"></i> {{ chat.course.course_name }}
-                            </p>
+                            <p class="text-xs text-gray-300 leading-relaxed italic">"{{ chat.message|truncatewords:8 }}"</p>
                         </div>
                     </div>
                     {% empty %}
-                    <p class="text-center text-sm text-gray-500 py-6 bg-[#252A33] rounded-2xl border border-dashed border-white/10">Belum ada aktivitas diskusi.</p>
+                    <p class="text-center text-sm text-gray-500 py-6">Belum ada aktivitas.</p>
                     {% endfor %}
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<style>
-    /* Reset background body utama dan sidebar */
-    body, aside, header, main {
-        background-color: #0F1115 !important; /* Warna utama background gelap */
-        color: #e5e5e5;
-        border-color: #1A1D24 !important;
+{# SCRIPT GLOBAL UNTUK PAGINATION (WAJIB ADA DI LUAR) #}
+<script>
+    function changePage(pageNum) {
+        document.getElementById('page-input').value = pageNum;
+        if(window.fetchContent) {
+            window.fetchContent(); // Panggil fungsi global
+        }
     }
-    
-    /* Override warna border dan separator di base */
-    .border-gray-200, .border-gray-100, .divide-gray-100 > * + * {
-        border-color: #1A1D24 !important;
-    }
-
-    /* Scrollbar Gelap Modern */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0F1115; }
-    ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #555; }
-</style>
+</script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     feather.replace();
-
-    // --- SCRIPT NOTIFIKASI (BARU) ---
+    
+    // --- SCRIPT NOTIFIKASI ---
     function toggleNotif() {
         const dropdown = document.getElementById('notif-dropdown');
-        if (dropdown.classList.contains('invisible')) {
-            dropdown.classList.remove('invisible', 'opacity-0', 'scale-95');
-            dropdown.classList.add('opacity-100', 'scale-100');
-            fetchNotifications(); 
-        } else {
-            dropdown.classList.add('invisible', 'opacity-0', 'scale-95');
-            dropdown.classList.remove('opacity-100', 'scale-100');
-        }
+        dropdown.classList.toggle('invisible');
+        dropdown.classList.toggle('opacity-0');
+        dropdown.classList.toggle('scale-95');
+        if(!dropdown.classList.contains('invisible')) fetchNotifications();
     }
-
-    document.addEventListener('click', function(e) {
-        const container = document.getElementById('notif-container');
-        const dropdown = document.getElementById('notif-dropdown');
-        if (container && !container.contains(e.target) && !dropdown.classList.contains('invisible')) {
-            toggleNotif();
-        }
-    });
 
     async function fetchNotifications() {
         try {
@@ -327,95 +280,55 @@
             if(data.status === 'success') {
                 const list = document.getElementById('notif-list');
                 const badge = document.getElementById('notif-badge');
+                if(data.count > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
                 
-                if(data.count > 0) badge.classList.remove('hidden'); 
-                else badge.classList.add('hidden');
-
                 if (data.notifications.length === 0) {
                     list.innerHTML = `<div class="p-6 text-center text-gray-500 text-xs">Tidak ada notifikasi baru.</div>`;
                 } else {
                     let html = '';
                     data.notifications.forEach(n => {
                         let icon = n.type === 'message' ? 'mail' : 'message-circle';
-                        let iconColor = n.type === 'message' ? 'text-indigo-400 bg-indigo-500/10' : 'text-orange-400 bg-orange-500/10';
-                        html += `
-                        <a href="${n.url}" class="block p-4 hover:bg-[#252A33] transition-colors border-b border-white/5 last:border-0 group">
-                            <div class="flex gap-3">
-                                <div class="flex-shrink-0 mt-1">
-                                    <div class="w-8 h-8 rounded-full ${iconColor} flex items-center justify-center border border-white/5"><i data-feather="${icon}" class="w-3.5 h-3.5"></i></div>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-start mb-0.5">
-                                        <p class="text-xs font-bold text-white truncate pr-2">${n.sender}</p>
-                                        <span class="text-[9px] text-gray-500 whitespace-nowrap">${n.time}</span>
-                                    </div>
-                                    <p class="text-[11px] text-gray-400 leading-snug line-clamp-2 group-hover:text-gray-300">${n.text}</p>
-                                </div>
-                            </div>
-                        </a>`;
+                        html += `<a href="${n.url}" class="block p-4 hover:bg-[#252A33] border-b border-white/5">
+                            <div class="flex gap-3"><div class="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400"><i data-feather="${icon}" class="w-3.5 h-3.5"></i></div>
+                            <div class="flex-1"><p class="text-xs font-bold text-white">${n.sender}</p><p class="text-[10px] text-gray-400">${n.text}</p></div></div></a>`;
                     });
                     list.innerHTML = html;
                     feather.replace();
                 }
             }
-        } catch(e) { console.error("Gagal ambil notif", e); }
+        } catch(e) {}
     }
 
-    // Poll setiap 10 detik
-    setInterval(fetchNotifications, 10000);
-    fetchNotifications();
-    // ---------------------------------
-
+    // --- AJAX FILTER & PAGINATION (MODIFIED FOR GLOBAL ACCESS) ---
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('filter-form');
-        // Tambahkan event listener untuk input text dan select
-        const inputs = form.querySelectorAll('input[type="text"], select');
+        const inputs = form.querySelectorAll('input, select');
         const contentContainer = document.getElementById('dashboard-content');
         let timeout = null;
 
-        function fetchContent() {
-            // Efek loading yang lebih halus
+        // Buat fungsi fetchContent bisa diakses global (window)
+        window.fetchContent = () => {
             contentContainer.style.opacity = '0.5';
-            contentContainer.style.filter = 'blur(2px)';
-            contentContainer.style.transition = 'all 0.2s ease';
-            
             const url = new URL(window.location.href);
             const params = new URLSearchParams(new FormData(form));
             
-            fetch(`${url.pathname}?${params.toString()}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.text())
-            .then(html => {
-                contentContainer.innerHTML = html;
-                feather.replace();
-                // Kembalikan tampilan normal
-                contentContainer.style.opacity = '1';
-                contentContainer.style.filter = 'blur(0px)';
-                
-                window.history.pushState({}, '', `${url.pathname}?${params.toString()}`);
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                contentContainer.style.opacity = '1';
-                contentContainer.style.filter = 'blur(0px)';
-            });
-        }
+            fetch(`${url.pathname}?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(res => res.text()).then(html => {
+                    contentContainer.innerHTML = html;
+                    feather.replace();
+                    contentContainer.style.opacity = '1';
+                });
+        };
 
         inputs.forEach(input => {
             input.addEventListener('input', () => {
-                if (input.tagName === 'INPUT') { // Jika input text, pakai debounce
-                    clearTimeout(timeout);
-                    timeout = setTimeout(fetchContent, 300);
-                } else { // Jika select, langsung fetch
-                    fetchContent();
-                }
+                // Reset page ke 1 jika filter berubah (kecuali hidden page input)
+                if(input.name !== 'page') document.getElementById('page-input').value = 1;
+                
+                if(input.type === 'text') { clearTimeout(timeout); timeout = setTimeout(window.fetchContent, 300); }
+                else window.fetchContent();
             });
         });
     });
 </script>
-<style>
-    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-</style>
 {% endblock %}
