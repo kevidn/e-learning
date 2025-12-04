@@ -275,7 +275,12 @@
         if (!currentOtherUserId) return;
         try {
             const res = await fetch(`/api/messages/get/${currentOtherUserId}/?last_id=${lastMsgId}`);
-            const data = await response.json();
+            
+            // --- PERBAIKAN DI SINI (Ganti 'response' menjadi 'res') ---
+            const data = await res.json(); 
+            // Sebelumnya tertulis: const data = await response.json(); (Error: response is not defined)
+            // ----------------------------------------------------------
+
             if (data.status === 'success') {
                 const loader = document.getElementById('loading-msg');
                 if (data.messages.length > 0) {
@@ -286,9 +291,9 @@
                     loader.innerText = "Belum ada pesan.";
                 }
             }
-        } catch(e){}
+        } catch(e){ console.error(e); }
     }
-
+    
     document.getElementById('chat-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const input = document.getElementById('message-input');
