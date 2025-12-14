@@ -4,46 +4,69 @@
 {% block title %}Katalog Kelas | Khacademy{% endblock %}
 
 {% block sidebar_menu %}
-    {% include 'components/sidebar_mahasiswa.html' %}
+{% include 'components/sidebar_mahasiswa.html' %}
 {% endblock %}
 
 {% block content %}
+<style>
+    /* CSS Mobile Sidebar */
+    @media (max-width: 1024px) {
+        aside {
+            position: fixed !important;
+            top: 0; left: 0; bottom: 0;
+            z-index: 9999 !important;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            background-color: #1A1D24 !important;
+            width: 280px !important;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+        aside.open { transform: translateX(0); }
+        #mobile-backdrop {
+            display: none;
+            position: fixed; inset: 0; z-index: 9998 !important;
+            background: rgba(0,0,0,0.6); /* Solid dark, no blur */
+        }
+        #mobile-backdrop.show { display: block; }
+    }
+</style>
+
+<div id="mobile-backdrop" onclick="toggleSidebar()"></div>
+
 <div class="min-h-full bg-[#0F1115] p-6 lg:p-10 font-poppins relative">
-    
-    {# --- BACKGROUND ACCENTS --- #}
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px]"></div>
-        <div class="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]"></div>
-    </div>
 
     <div class="relative z-10 max-w-7xl mx-auto">
-        
+
         {# --- HEADER --- #}
-        <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 animate-fade-in-up">
-            <div>
-                <h1 class="text-4xl font-black text-white tracking-tight mb-2">Katalog Kelas</h1>
-                <p class="text-gray-400">Jelajahi pengetahuan baru dan tingkatkan keahlian Anda.</p>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 animate-fade-in-up">
+            <div class="flex items-center gap-4">
+                {# Tombol Hamburger #}
+                <button onclick="toggleSidebar()" class="lg:hidden p-2.5 bg-[#1A1D24] text-white rounded-xl border border-white/10 hover:bg-[#252A33] transition-colors">
+                    <i data-feather="menu" class="w-6 h-6"></i>
+                </button>
+
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Katalog Kelas</h1>
+                    <p class="text-gray-400">Jelajahi pengetahuan baru dan tingkatkan keahlian Anda.</p>
+                </div>
             </div>
         </div>
 
         {# --- FORM FILTER (AJAX) --- #}
         <div class="sticky top-4 z-40 mb-8 animate-fade-in-up" style="animation-delay: 0.1s;">
             <form id="catalogForm" class="bg-[#1A1D24]/90 backdrop-blur-xl p-2 rounded-2xl border border-white/10 shadow-2xl flex flex-col md:flex-row gap-2">
-                
-                {# Hidden Input untuk Pagination #}
+
                 <input type="hidden" name="page" id="pageInput" value="1">
 
-                {# Search Input #}
                 <div class="relative flex-1 group">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i data-feather="search" class="text-gray-500 w-5 h-5 group-focus-within:text-indigo-400 transition-colors"></i>
                     </div>
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi atau pengajar..." 
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Cari materi atau pengajar..."
                            class="w-full bg-[#0F1115] border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-gray-200 placeholder-gray-600 focus:outline-none focus:bg-[#15171c] focus:border-indigo-500/50 transition-all font-medium text-sm">
                 </div>
 
                 <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                    {# Filter Status #}
                     <div class="relative min-w-[160px]">
                         <select name="filter" class="w-full h-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm text-gray-300 appearance-none cursor-pointer hover:bg-[#15171c] focus:border-indigo-500/50 outline-none transition-all font-medium pl-10">
                             <option value="all">Semua Status</option>
@@ -53,7 +76,6 @@
                         <i data-feather="filter" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
                     </div>
 
-                    {# Filter Sort #}
                     <div class="relative min-w-[160px]">
                         <select name="sort" class="w-full h-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm text-gray-300 appearance-none cursor-pointer hover:bg-[#15171c] focus:border-indigo-500/50 outline-none transition-all font-medium pl-10">
                             <option value="newest">Terbaru</option>
@@ -83,6 +105,13 @@
 <script>
     feather.replace();
 
+    // Toggle Sidebar
+    function toggleSidebar() {
+        const sidebar = document.querySelector('aside');
+        const backdrop = document.getElementById('mobile-backdrop');
+        if(sidebar) { sidebar.classList.toggle('open'); backdrop.classList.toggle('show'); }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('catalogForm');
         const contentDiv = document.getElementById('catalogContent');
@@ -90,10 +119,8 @@
         const inputs = form.querySelectorAll('input, select');
         let debounceTimer;
 
-        // Fungsi utama fetch data
         function fetchCatalog() {
             contentDiv.style.opacity = '0.5';
-            
             const params = new URLSearchParams(new FormData(form));
             const url = `${window.location.pathname}?${params.toString()}`;
 
@@ -103,35 +130,27 @@
                     contentDiv.innerHTML = html;
                     contentDiv.style.opacity = '1';
                     feather.replace();
-                    // Update URL di browser tanpa reload
                     window.history.pushState({}, '', url);
                 })
                 .catch(err => console.error('Gagal memuat katalog:', err));
         }
 
-        // Event Listener untuk semua input
         inputs.forEach(input => {
             input.addEventListener('input', function() {
-                // Reset ke halaman 1 jika filter berubah (kecuali pagination sendiri)
                 if (this.name !== 'page') pageInput.value = 1;
-
                 if (this.type === 'text') {
                     clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(fetchCatalog, 300); // Debounce search
-                } else {
-                    fetchCatalog(); // Dropdown langsung fetch
-                }
+                    debounceTimer = setTimeout(fetchCatalog, 300);
+                } else { fetchCatalog(); }
             });
         });
 
-        // Fungsi Global untuk Pagination (dipanggil dari tombol di catalog_content.html)
         window.goToPage = function(pageNum) {
             pageInput.value = pageNum;
             fetchCatalog();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Fungsi Global Reset
         window.resetFilters = function() {
             form.reset();
             pageInput.value = 1;

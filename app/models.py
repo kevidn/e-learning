@@ -160,6 +160,7 @@ class Enrollment(models.Model):
     course = models.ForeignKey(Course, models.DO_NOTHING, blank=True, null=True)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     last_module = models.ForeignKey(Module, models.SET_NULL, blank=True, null=True, related_name='last_accessed_by')
+    completed_content_ids = models.TextField(default="", blank=True)
 
     class Meta:
         managed = True

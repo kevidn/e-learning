@@ -2,9 +2,6 @@
 {% load static %}
 
 {% block title %}My Learning | Khacademy{% endblock %}
-{% block header_title %}{% endblock %}
-{% block header_subtitle %}{% endblock %}
-{% block navbar_actions %}{% endblock %}
 
 {# --- SIDEBAR KHUSUS DARK MODE --- #}
 {% block sidebar_menu %}
@@ -12,49 +9,100 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-full bg-[#0F1115] p-6 lg:p-8">
-    
+<style>
+    /* Override Global Styles untuk Dark Mode Konsisten */
+    body, aside, header, main {
+        background-color: #0F1115 !important;
+        color: #e5e5e5;
+        border-color: #1A1D24 !important;
+    }
+    .border-gray-200, .border-gray-100 { border-color: #1A1D24 !important; }
+
+    /* CSS Sidebar Mobile (Off-Canvas) - FIX BURAM */
+    @media (max-width: 1024px) {
+        aside {
+            position: fixed !important;
+            top: 0; left: 0; bottom: 0;
+            z-index: 9999 !important; /* Pastikan di atas backdrop */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            background-color: #1A1D24 !important;
+            width: 280px !important;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+        aside.open {
+            transform: translateX(0);
+        }
+        /* Backdrop gelap solid transparan (tanpa blur agar ringan & tidak bug) */
+        #mobile-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            z-index: 9998 !important;
+            background: rgba(0,0,0,0.6);
+        }
+        #mobile-backdrop.show { display: block; }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+{# Backdrop Mobile #}
+<div id="mobile-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="min-h-full bg-[#0F1115] p-4 md:p-6 lg:p-8">
+
+    {# --- HEADER --- #}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div>
-            <h2 class="text-3xl font-bold text-white tracking-tight">My Learning</h2>
-            <p class="text-gray-400 text-sm mt-1">Lanjutkan progres belajar Anda.</p>
+        <div class="flex items-center gap-4">
+            {# Tombol Hamburger (Mobile Only) #}
+            <button onclick="toggleSidebar()" class="lg:hidden p-2.5 bg-[#1A1D24] text-white rounded-xl border border-white/10 hover:bg-[#252A33] transition-colors">
+                <i data-feather="menu" class="w-6 h-6"></i>
+            </button>
+
+            <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight">My Learning</h2>
+                <p class="text-gray-400 text-sm mt-1">Lanjutkan progres belajar Anda.</p>
+            </div>
         </div>
 
-        <form id="filter-form" class="flex flex-col sm:flex-row gap-3">
+        <form id="filter-form" class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <input type="hidden" name="page" id="page-input" value="1">
 
-            <div class="relative group">
+            <div class="relative group flex-1 md:flex-none">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i data-feather="search" class="text-gray-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors"></i>
                 </div>
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Cari kursus..." 
-                       class="w-full sm:w-64 pl-10 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600 
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Cari kursus..."
+                       class="w-full sm:w-64 pl-10 pr-4 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 placeholder-gray-600
                               focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 transition-all outline-none">
             </div>
 
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-feather="filter" class="text-gray-500 w-4 h-4"></i>
+            <div class="flex gap-3">
+                <div class="relative flex-1 sm:flex-none">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-feather="filter" class="text-gray-500 w-4 h-4"></i>
+                    </div>
+                    <select name="sort" class="w-full sm:w-40 pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
+                        <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
+                        <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Terlama</option>
+                        <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
+                        <option value="z-a" {% if sort_option == 'z-a' %}selected{% endif %}>Z-A</option>
+                    </select>
+                    <i data-feather="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-gray-600 pointer-events-none"></i>
                 </div>
-                <select name="sort" class="w-full sm:w-40 pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
-                    <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Terbaru</option>
-                    <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Terlama</option>
-                    <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>A-Z</option>
-                    <option value="z-a" {% if sort_option == 'z-a' %}selected{% endif %}>Z-A</option>
-                </select>
-                <i data-feather="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-gray-600 pointer-events-none"></i>
-            </div>
 
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-feather="layers" class="text-gray-500 w-4 h-4"></i>
+                <div class="relative flex-1 sm:flex-none">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-feather="layers" class="text-gray-500 w-4 h-4"></i>
+                    </div>
+                    <select name="filter" class="w-full sm:w-40 pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
+                        <option value="all" {% if filter_status == 'all' %}selected{% endif %}>Semua</option>
+                        <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Sedang Belajar</option>
+                        <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Selesai</option>
+                    </select>
+                    <i data-feather="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-gray-600 pointer-events-none"></i>
                 </div>
-                <select name="filter" class="w-full sm:w-40 pl-10 pr-8 py-2.5 rounded-xl bg-[#1A1D24] border border-white/5 text-sm text-gray-300 appearance-none cursor-pointer focus:bg-[#202530] focus:border-indigo-500/50 focus:ring-0 outline-none">
-                    <option value="all" {% if filter_status == 'all' %}selected{% endif %}>Semua</option>
-                    <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Sedang Belajar</option>
-                    <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Selesai</option>
-                </select>
-                <i data-feather="chevron-down" class="absolute right-3 top-3 w-4 h-4 text-gray-600 pointer-events-none"></i>
             </div>
         </form>
     </div>
@@ -64,24 +112,21 @@
     </div>
 
 </div>
-
-<style>
-    body, aside, header, main {
-        background-color: #0F1115 !important;
-        color: #e5e5e5;
-        border-color: #1A1D24 !important;
-    }
-    .border-gray-200, .border-gray-100 { border-color: #1A1D24 !important; }
-    
-    /* Animasi Fade In */
-    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     feather.replace();
+
+    // Fungsi Toggle Sidebar Mobile
+    function toggleSidebar() {
+        const sidebar = document.querySelector('aside');
+        const backdrop = document.getElementById('mobile-backdrop');
+        if(sidebar && backdrop) {
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('show');
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('filter-form');
@@ -90,54 +135,37 @@
         const pageInput = document.getElementById('page-input');
         let timeout = null;
 
-        // Fungsi Fetch Global
         window.fetchContent = function() {
             contentContainer.style.opacity = '0.5';
             contentContainer.style.filter = 'blur(2px)';
             contentContainer.style.transition = 'all 0.2s ease';
-            
+
             const url = new URL(window.location.href);
             const params = new URLSearchParams(new FormData(form));
-            
-            fetch(`${url.pathname}?${params.toString()}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.text())
-            .then(html => {
-                contentContainer.innerHTML = html;
-                feather.replace();
-                contentContainer.style.opacity = '1';
-                contentContainer.style.filter = 'blur(0px)';
-                
-                window.history.pushState({}, '', `${url.pathname}?${params.toString()}`);
-                
-                if(window.scrollY > 150) window.scrollTo({ top: 150, behavior: 'smooth' });
-            })
-            .catch(err => {
-                console.error(err);
-                contentContainer.style.opacity = '1';
-            });
+
+            fetch(`${url.pathname}?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(response => response.text())
+                .then(html => {
+                    contentContainer.innerHTML = html;
+                    feather.replace();
+                    contentContainer.style.opacity = '1';
+                    contentContainer.style.filter = 'blur(0px)';
+                    window.history.pushState({}, '', `${url.pathname}?${params.toString()}`);
+                    if(window.scrollY > 150) window.scrollTo({ top: 150, behavior: 'smooth' });
+                })
+                .catch(err => { console.error(err); contentContainer.style.opacity = '1'; });
         }
 
-        // Fungsi Ganti Halaman
         window.changePage = function(pageNum) {
             pageInput.value = pageNum;
             window.fetchContent();
         }
 
-        // Listener Filter
         inputs.forEach(input => {
             input.addEventListener('input', () => {
-                if(input.id !== 'page-input') {
-                    pageInput.value = 1; // Reset ke hal 1 jika filter berubah
-                }
-
-                if (input.type === 'text') {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(window.fetchContent, 300);
-                } else {
-                    window.fetchContent();
-                }
+                if(input.id !== 'page-input') pageInput.value = 1;
+                if (input.type === 'text') { clearTimeout(timeout); timeout = setTimeout(window.fetchContent, 300); }
+                else { window.fetchContent(); }
             });
         });
     });
