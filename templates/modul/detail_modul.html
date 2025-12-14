@@ -78,10 +78,17 @@
             </div>
 
             <h2 class="text-xl font-bold text-white leading-tight mb-1">{{ module.title }}</h2>
-            <p class="text-xs text-gray-500 font-medium">{{ contents.count }} Materi Pembelajaran</p>
+            <p class="text-xs text-gray-500 font-medium mb-4">{{ contents.count }} Materi Pembelajaran</p>
 
-            <div class="w-full bg-[#0F1115] rounded-full h-1.5 mt-4 overflow-hidden">
-                <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%" id="mini-progress-bar"></div>
+            {# --- PROGRESS BAR MODUL --- #}
+            <div class="flex justify-between text-xs font-bold text-gray-400 mb-1">
+                <span>Progress</span>
+                <span id="progress-text">{{ progress_percent }}%</span>
+            </div>
+            <div class="w-full bg-[#0F1115] rounded-full h-2 overflow-hidden border border-white/5">
+                <div id="module-progress-bar" 
+                     class="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(79,70,229,0.5)]" 
+                     style="width: {{ progress_percent }}%"></div>
             </div>
         </div>
 
@@ -89,15 +96,25 @@
             {% for content in contents %}
             <button onclick="loadContent('{{ content.content_id }}', this); if(window.innerWidth < 1024) toggleSidebar();"
                     id="nav-item-{{ content.content_id }}"
+                    data-completed="{% if content.content_id in completed_ids %}true{% else %}false{% endif %}"
                     class="w-full text-left p-3.5 flex items-start space-x-3 rounded-xl transition-all border border-transparent group relative
                 {% if forloop.first %}bg-[#252A33] border-white/5 text-white active-item shadow-lg{% else %}hover:bg-white/5 text-gray-400 hover:text-gray-200{% endif %}">
 
-                <div class="active-indicator absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full {% if not forloop.first %}hidden{% endif %}"></div>
+                <div class="active-indicator absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full hidden"></div>
 
-                <div class="flex-shrink-0 mt-0.5 ml-1">
-                    <i data-feather="{% if content.video_url %}play-circle{% else %}file-text{% endif %}"
-                       class="w-4 h-4 icon-display {% if forloop.first %}text-indigo-400{% endif %}"></i>
+                <div class="flex-shrink-0 mt-0.5 ml-1 relative">
+                    {# Icon Checklist (Muncul jika completed) #}
+                    <div class="check-icon {% if content.content_id in completed_ids %}block{% else %}hidden{% endif %} text-green-400">
+                         <i data-feather="check-circle" class="w-4 h-4"></i>
+                    </div>
+                    
+                    {# Icon Tipe Konten (Muncul jika belum completed) #}
+                    <div class="type-icon {% if content.content_id in completed_ids %}hidden{% else %}block{% endif %}">
+                        <i data-feather="{% if content.video_url %}play-circle{% else %}file-text{% endif %}" 
+                           class="w-4 h-4 icon-display"></i>
+                    </div>
                 </div>
+
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-medium truncate leading-snug">{{ content.title }}</h4>
                 </div>
@@ -127,6 +144,7 @@
             </div>
         </div>
 
+        {# AREA SCROLL UTAMA (Disini kita pasang deteksi scroll) #}
         <div class="flex-1 overflow-y-auto custom-scroll p-4 md:p-8 lg:p-12 pb-32 relative z-10" id="main-scroll-area">
 
             <div id="loading-overlay" class="hidden absolute inset-0 bg-[#0F1115] z-50 flex flex-col items-center justify-center min-h-[500px]">
@@ -173,7 +191,7 @@
                 {% endwith %}
             </div>
 
-            {# TUGAS SECTION (Sama, hanya penyesuaian padding mobile) #}
+            {# TUGAS SECTION #}
             {% if assignment %}
             <div class="mt-24 max-w-4xl mx-auto relative z-20">
                 <div class="bg-[#16181D] border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden group">
@@ -199,7 +217,7 @@
                             </div>
                         </div>
 
-                        {# Form Submission Logic (Tidak berubah, hanya styling wrapping) #}
+                        {# Form Submission Logic #}
                         {% if submission %}
                         <div class="flex flex-col md:flex-row gap-6">
                             <div class="flex-1 bg-green-500/5 border border-green-500/20 rounded-2xl p-6">
@@ -238,14 +256,11 @@
                     </div>
                 </div>
             </div>
-
             {% endif %}
 
             {# --- NAVIGASI MODUL --- #}
             <div class="max-w-4xl mx-auto mt-16 mb-8 px-0 md:px-2">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-
-                    {# Tombol Previous #}
                     {% if prev_module %}
                     <a href="{% url 'detail_modul' prev_module.module_id %}"
                        class="w-full md:w-auto flex items-center gap-4 px-6 py-4 rounded-2xl bg-[#1A1D24] border border-white/5 hover:border-white/10 hover:bg-[#20242C] transition-all group">
@@ -263,7 +278,6 @@
                     <div class="hidden md:block"></div>
                     {% endif %}
 
-                    {# Tombol Next #}
                     {% if next_module %}
                     <a href="{% url 'detail_modul' next_module.module_id %}"
                        class="w-full md:w-auto flex items-center justify-between md:justify-start gap-4 px-6 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 hover:-translate-y-1 transition-all group border border-indigo-500 ring-1 ring-white/10">
@@ -289,14 +303,13 @@
                         </div>
                     </a>
                     {% endif %}
-
                 </div>
             </div>
 
             <div class="h-32"></div>
         </div>
 
-        {# CHAT BAR (Fix: Max-width & Sticky) #}
+        {# CHAT BAR #}
         <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-[#0F1115] via-[#0F1115] to-transparent pointer-events-none z-40">
             <div class="pointer-events-auto max-w-4xl mx-auto bg-[#1A1D24] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
                 <form id="quick-chat-form" onsubmit="return false;" class="flex-1 flex gap-2">
@@ -344,17 +357,91 @@
     feather.replace();
     const urlSubmitQuiz = "{% url 'submit_quiz_ajax' %}";
 
-    // --- New Toggle Function for Mobile ---
+    // --- TRACKING & SCROLL VARIABLES ---
+    let currentContentId = null;
+    let isCurrentContentCompleted = false;
+    const scrollArea = document.getElementById('main-scroll-area');
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load first content automatically if available
+        {% if contents %}
+            const firstId = "{{ contents.0.content_id }}";
+            const firstBtn = document.getElementById(`nav-item-${firstId}`);
+            if(firstBtn) loadContent(firstId, firstBtn);
+        {% endif %}
+    });
+
+    // --- SCROLL EVENT LISTENER (LOGIC UTAMA TRACKING) ---
+    scrollArea.addEventListener('scroll', function() {
+        if (!currentContentId || isCurrentContentCompleted) return;
+
+        // Cek jika scroll sudah mendekati bawah (toleransi 50px)
+        const position = scrollArea.scrollTop + scrollArea.clientHeight;
+        const threshold = scrollArea.scrollHeight - 50; 
+
+        if (position >= threshold) {
+            markContentAsComplete(currentContentId);
+        }
+    });
+
+    // --- FUNCTIONS ---
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar-materi');
         const backdrop = document.getElementById('mobile-backdrop');
         sidebar.classList.toggle('show-sidebar');
         backdrop.classList.toggle('show');
     }
-    // --------------------------------------
+
+    async function markContentAsComplete(contentId) {
+        if (isCurrentContentCompleted) return;
+        isCurrentContentCompleted = true; // Lock to prevent multiple requests
+
+        try {
+            const formData = new FormData();
+            formData.append('content_id', contentId);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            const response = await fetch("{% url 'mark_content_read_ajax' %}", {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                updateUIProgress(contentId, data.progress);
+            }
+        } catch (error) {
+            console.error('Error tracking:', error);
+            isCurrentContentCompleted = false; // Unlock on error
+        }
+    }
+
+    function updateUIProgress(contentId, newPercentage) {
+        // Update Progress Bar
+        const bar = document.getElementById('module-progress-bar');
+        const text = document.getElementById('progress-text');
+        if(bar) bar.style.width = newPercentage + '%';
+        if(text) text.innerText = newPercentage + '%';
+
+        // Update Icon Sidebar
+        const btn = document.getElementById(`nav-item-${contentId}`);
+        if (btn) {
+            btn.setAttribute('data-completed', 'true');
+            const typeIcon = btn.querySelector('.type-icon');
+            const checkIcon = btn.querySelector('.check-icon');
+            if(typeIcon) typeIcon.classList.add('hidden');
+            if(checkIcon) checkIcon.classList.remove('hidden');
+        }
+    }
 
     async function loadContent(contentId, btnElement) {
-        // Reset Styles
+        // Update Global State
+        currentContentId = contentId;
+
+        // Reset Styles for All Buttons
         document.querySelectorAll('button[id^="nav-item-"]').forEach(btn => {
             btn.classList.remove('bg-[#252A33]', 'border-white/5', 'text-white', 'active-item', 'shadow-lg');
             btn.classList.add('text-gray-400', 'hover:bg-white/5', 'hover:text-gray-200');
@@ -364,6 +451,10 @@
         });
 
         if(btnElement) {
+            // Update tracking flag based on clicked element
+            isCurrentContentCompleted = (btnElement.getAttribute('data-completed') === 'true');
+
+            // Apply Active Styles
             btnElement.classList.remove('text-gray-400', 'hover:bg-white/5', 'hover:text-gray-200');
             btnElement.classList.add('bg-[#252A33]', 'border-white/5', 'text-white', 'active-item', 'shadow-lg');
             btnElement.querySelector('.active-indicator').classList.remove('hidden');
@@ -375,7 +466,7 @@
         const loader = document.getElementById('loading-overlay');
         const scrollArea = document.getElementById('main-scroll-area');
 
-        container.innerHTML = ''; // Clear content
+        container.innerHTML = ''; 
         loader.classList.remove('hidden');
 
         try {
@@ -383,7 +474,7 @@
             if (!response.ok) throw new Error('Gagal ambil data');
             const data = await response.json();
 
-            // Responsive Font Sizes in render
+            // Build HTML
             let htmlContent = `
                 <div class="animate-fade-in relative z-20">
                     <div class="mb-8 md:mb-10 pb-6 border-b border-white/5">
@@ -406,6 +497,9 @@
             if (data.text_content) {
                 htmlContent += `<div class="prose prose-invert prose-base md:prose-lg max-w-none text-gray-300 leading-relaxed relative z-20">${data.text_content.replace(/\n/g, '<br>')}</div>`;
             }
+            
+            // Spacer for scrolling functionality
+            htmlContent += `<div class="h-40 flex items-center justify-center text-gray-600 text-xs uppercase tracking-widest mt-8 border-t border-white/5 pt-8">Akhir Materi</div>`;
 
             if (data.quiz) {
                 htmlContent += renderQuizSection(data.quiz);
@@ -415,6 +509,13 @@
             container.innerHTML = htmlContent;
             feather.replace();
             scrollArea.scrollTop = 0;
+            
+            // Check if content is short enough to auto-complete without scrolling
+            setTimeout(() => {
+                if (scrollArea.scrollHeight <= scrollArea.clientHeight + 20) {
+                     markContentAsComplete(currentContentId);
+                }
+            }, 800);
 
         } catch (e) {
             console.error(e);
@@ -479,11 +580,55 @@
         return html;
     }
 
-    // Logic submitQuiz dan Chat Script tetap sama seperti sebelumnya...
-    // (Copy paste logic submitQuiz dan chat script di sini)
-    // ...
+    // --- QUIZ SUBMISSION LOGIC ---
+    async function submitQuiz(event, quizId) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
 
-    // JS for Chat Logic (Shortened for brevity as logic is same)
+        // UI Loading State
+        btn.disabled = true;
+        btn.innerText = "Mengirim...";
+        
+        const formData = new FormData(form);
+        formData.append('quiz_id', quizId);
+
+        try {
+            const response = await fetch(urlSubmitQuiz, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Reload content to show result UI (Score)
+                loadContent(currentContentId);
+                alert(data.message);
+                
+                // Mark content as complete since quiz is done
+                markContentAsComplete(currentContentId);
+            } else {
+                alert("Gagal: " + data.message);
+            }
+
+        } catch (error) {
+            console.error('Error submitting quiz:', error);
+            alert("Terjadi kesalahan sistem.");
+        } finally {
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+    }
+
+    // --- CHAT LOGIC ---
     const chatInput = document.getElementById('quick-message-input');
     const sendBtn = document.getElementById('btn-quick-send');
     const quickChatForm = document.getElementById('quick-chat-form');
@@ -493,14 +638,17 @@
             e.preventDefault();
             const text = chatInput.value.trim();
             if (!text) return;
+
             const originalIcon = sendBtn.innerHTML;
             sendBtn.disabled = true;
             sendBtn.innerHTML = `<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
+
             const formData = new FormData(this);
             const chatDestSelect = document.getElementById('chat-destination');
             const mode = chatDestSelect ? chatDestSelect.value : 'public';
 
             let targetUrl = (mode === 'private') ? "{% url 'send_private_msg_ajax' %}" : "{% url 'send_chat_ajax' %}";
+            
             if (mode === 'private') {
                 const lecturerId = document.getElementById('lecturer-id').value;
                 if(!lecturerId) { alert('Data dosen error'); return; }
@@ -508,12 +656,26 @@
             }
 
             try {
-                const response = await fetch(targetUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const response = await fetch(targetUrl, { 
+                    method: 'POST', 
+                    body: formData, 
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' } 
+                });
                 const data = await response.json();
-                if (data.status === 'success') chatInput.value = '';
-                else alert('Gagal: ' + data.message);
-            } catch (error) { console.error(error); }
-            finally { sendBtn.disabled = false; sendBtn.innerHTML = originalIcon; feather.replace(); }
+                
+                if (data.status === 'success') {
+                    chatInput.value = '';
+                    // Optional: Show simplified toast notification
+                } else {
+                    alert('Gagal: ' + data.message);
+                }
+            } catch (error) { 
+                console.error(error); 
+            } finally { 
+                sendBtn.disabled = false; 
+                sendBtn.innerHTML = originalIcon; 
+                feather.replace(); 
+            }
         });
     }
 </script>

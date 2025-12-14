@@ -77,4 +77,6 @@ urlpatterns = [
     path('catalog/', views.course_catalog, name='course_catalog'),
     
     path('about/', views.about_us, name='about_us'),
+
+    path('api/mark-content-read/', views.mark_content_read_ajax, name='mark_content_read_ajax'),
 ]

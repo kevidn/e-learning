@@ -412,22 +412,36 @@ def detail_modul(request, modul_id):
         
     user_id = request.session['user_id']
     
-    # 2. Get Current Module & Content
+    # 2. Get Current Module
     module = get_object_or_404(Module, module_id=modul_id)
     
-    # 3. Enrollment Check & Update Last Access
+    # 3. Enrollment Check
     enrollment = Enrollment.objects.filter(user_id=user_id, course=module.course).first()
     if not enrollment:
         messages.error(request, "Anda belum terdaftar di kelas ini.")
         return redirect('mahasiswa_dashboard')
 
+    # Update Last Access
     enrollment.last_module = module
     enrollment.save()
 
-    # 4. Fetch Content (Video/Text)
-    # We take the first content item for the main player, or iterate in template
+    # 4. Fetch Content & Calculate Progress
     contents = ModuleContent.objects.filter(module=module).order_by('order')
-    main_content = contents.first() 
+    
+    # --- LOGIC PROGRESS BARU ---
+    # Parse kolom text "1,2,5" menjadi list integer [1, 2, 5]
+    raw_ids = enrollment.completed_content_ids or ""
+    # Filter x.strip() untuk menghindari string kosong
+    completed_ids = [int(x) for x in raw_ids.split(',') if x.strip()]
+    
+    # Hitung Persentase Modul Ini
+    total_items = contents.count()
+    # Hitung berapa konten di modul ini yang ID-nya ada di completed_ids
+    mod_content_ids = list(contents.values_list('content_id', flat=True))
+    done_count = len([cid for cid in mod_content_ids if cid in completed_ids])
+    
+    progress_percent = int((done_count / total_items) * 100) if total_items > 0 else 0
+    # ---------------------------
 
     # 5. Syllabus Navigation (All modules in course)
     course_modules = Module.objects.filter(course=module.course).order_by('created_at')
@@ -443,26 +457,21 @@ def detail_modul(request, modul_id):
         next_module = None
 
     # 6. Assignments & Submission Logic
-    assignment = Assignment.objects.filter(module=module).first() # Assuming 1 assignment per module
+    assignment = Assignment.objects.filter(module=module).first()
     submission = None
     grade = None
     
     if assignment:
         submission = Submission.objects.filter(assignment=assignment, student_id=user_id).first()
-
         grade = Grade.objects.filter(assignment=assignment, user_id=user_id).first()
 
         # Handle POST: Upload Submission
         if request.method == 'POST' and not submission:
             answer_text = request.POST.get('answer_text')
-            # Handle single file upload logic here (simplified)
             uploaded_file = request.FILES.get('assignment_file')
             
             file_url = ''
             if uploaded_file:
-                # In real app: save file to media and get path. 
-                # For demo, we just store the name or handle standard FileSystemStorage
-                # This requires FileSystemStorage setup, here we just mock the path save
                 from django.core.files.storage import FileSystemStorage
                 fs = FileSystemStorage()
                 filename = fs.save(f"assignments/{uploaded_file.name}", uploaded_file)
@@ -476,6 +485,21 @@ def detail_modul(request, modul_id):
             )
             messages.success(request, "Tugas berhasil dikumpulkan!")
             return redirect('detail_modul', modul_id=modul_id)
+
+    context = {
+        'module': module,
+        'contents': contents,
+        'completed_ids': completed_ids,   # <-- List ID yang sudah selesai
+        'progress_percent': progress_percent, # <-- Persentase (0-100)
+        'course_modules': course_modules,
+        'prev_module': prev_module,
+        'next_module': next_module,
+        'assignment': assignment,
+        'submission': submission,
+        'grade': grade,
+    }
+
+    return render(request, 'modul/detail_modul.html', context)
 
     # 7. Context Assembly
     context = {
@@ -1921,3 +1945,50 @@ def hapus_course(request, course_id):
 
 def about_us(request):
     return render(request, 'about_us.html')
+
+# Tambahkan di views.py
+def mark_content_read_ajax(request):
+    if request.method == 'POST' and request.session.get('user_id'):
+        try:
+            user_id = request.session['user_id']
+            content_id = request.POST.get('content_id')
+            
+            # 1. Ambil Enrollment User
+            content = ModuleContent.objects.select_related('module__course').get(content_id=content_id)
+            enrollment = Enrollment.objects.filter(user_id=user_id, course=content.module.course).first()
+            
+            if enrollment:
+                # 2. Parse String ID yang ada menjadi List
+                current_ids_str = enrollment.completed_content_ids or ""
+                # Hasilkan list string ['1', '2'] dan filter yang kosong
+                id_list = [x for x in current_ids_str.split(',') if x.strip()]
+                
+                # 3. Tambahkan ID baru jika belum ada
+                str_id = str(content_id)
+                if str_id not in id_list:
+                    id_list.append(str_id)
+                    # Simpan kembali sebagai string koma (e.g., "1,2,3")
+                    enrollment.completed_content_ids = ",".join(id_list)
+                    enrollment.save()
+            
+                # 4. Hitung Progress Modul Ini (Untuk update UI realtime)
+                # Ambil semua konten di modul ini
+                module_contents = ModuleContent.objects.filter(module=content.module)
+                total_in_module = module_contents.count()
+                module_content_ids = set(str(c.content_id) for c in module_contents)
+                
+                # Hitung irisan (Berapa konten modul ini yang ada di daftar id_list user)
+                completed_count = len([x for x in id_list if x in module_content_ids])
+                
+                progress_percent = int((completed_count / total_in_module) * 100) if total_in_module > 0 else 0
+
+                return JsonResponse({
+                    'status': 'success',
+                    'progress': progress_percent,
+                    'message': 'Progress tersimpan'
+                })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+            
+    return JsonResponse({'status': 'error'})
